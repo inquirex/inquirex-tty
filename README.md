@@ -114,32 +114,25 @@ inquirex validate examples/08_tax_preparer.rb
 
 ### `inquirex graph <flow_file>`
 
-Export the flow as a [Mermaid](https://mermaid.js.org/) diagram.
+Export the flow as a [Mermaid](https://mermaid.js.org/) diagram source, an image, or both.
 
 ```bash
-inquirex graph examples/08_tax_preparer.rb                          # Mermaid source to stdout
-inquirex graph examples/08_tax_preparer.rb --output flow.mmd        # write to file
-inquirex graph examples/08_tax_preparer.rb --format image -o flow   # SVG via mmdc
-inquirex graph examples/08_tax_preparer.rb --format image --open    # SVG + open in viewer
+inquirex graph examples/08_tax_preparer.rb                                       # Mermaid source to stdout
+inquirex graph examples/08_tax_preparer.rb --output flow.mmd                     # write source to a file
+inquirex graph examples/08_tax_preparer.rb --format image -o flow.svg            # SVG via mmdc
+inquirex graph examples/08_tax_preparer.rb --format both --output ~/Desktop      # source + image into a directory
+inquirex graph examples/08_tax_preparer.rb --format image --open                 # SVG + open in viewer
 ```
 
 Options:
 
 | Flag | Description |
 |------|-------------|
-| `--output`, `-o` | Output file path (default: stdout) |
-| `--format`, `-f` | `source` (default) or `image` (SVG via `mmdc`) |
-| `--open`, `-p` | Open the generated image in the system viewer |
+| `--output`, `-o` | Output file or directory (default: stdout) |
+| `--format`, `-f` | `source` (default), `image` (SVG via `mmdc`), or `both` |
+| `--open`, `-p` | Open the generated image in the system viewer (default: false) |
 
-Image format requires [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) (`npm install -g @mermaid-js/mermaid-cli`). The command attempts to install it automatically if missing.
-
-### `inquirex open-graph <image_file>`
-
-Open a previously exported diagram image in the system viewer.
-
-```bash
-inquirex open-graph flow.svg
-```
+Image generation requires [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) (`npm install -g @mermaid-js/mermaid-cli`). The command attempts to install it automatically if `mmdc` is not on your `PATH`.
 
 ### `inquirex version`
 
@@ -280,7 +273,6 @@ inquirex-tty/
     │   ├── run.rb                  # Interactive flow execution
     │   ├── validate.rb             # Definition validation
     │   ├── graph.rb                # Mermaid diagram export
-    │   ├── open_graph.rb           # Open diagram in viewer
     │   └── version.rb              # Print version info
     ├── renderer.rb                 # Node → tty-prompt widget dispatcher
     ├── flow_loader.rb              # Load .rb flow definitions

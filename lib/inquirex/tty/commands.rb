@@ -11,7 +11,6 @@ module Inquirex
 
       register "run",        Run
       register "graph",      Graph
-      register "open-graph", OpenGraph
       register "validate",   Validate
       register "version",    Version
     end
