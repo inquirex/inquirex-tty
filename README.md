@@ -134,6 +134,32 @@ Options:
 
 Image generation requires [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) (`npm install -g @mermaid-js/mermaid-cli`). The command attempts to install it automatically if `mmdc` is not on your `PATH`.
 
+### `inquirex export <flow_file>`
+
+Export the flow definition as JSON or YAML. Useful for serving flows to frontend adapters (the JS widget, Rails API, etc.) or for inspecting the wire format.
+
+```bash
+inquirex export examples/08_tax_preparer.rb                          # pretty JSON to stdout
+inquirex export examples/08_tax_preparer.rb -f yml                   # YAML to stdout
+inquirex export examples/08_tax_preparer.rb -o .                     # write 08_tax_preparer.json to cwd
+inquirex export examples/08_tax_preparer.rb -f yml -o ~/flows        # write 08_tax_preparer.yml to ~/flows
+inquirex export examples/08_tax_preparer.rb -o out.json              # write to named file
+inquirex export examples/08_tax_preparer.rb -f yml -o out            # appends .yml → out.yml
+```
+
+Options:
+
+| Flag | Description |
+|------|-------------|
+| `--format`, `-f` | `json` (default), `yaml`, or `yml` |
+| `--output`, `-o` | Output file or directory (default: stdout) |
+
+Output path rules:
+
+- No `--output` → print to stdout
+- `--output <dir>` (existing directory) → write `<flow-basename>.<ext>` inside it
+- `--output <file>` → use that filename; if the extension is missing or mismatched, the appropriate one (`.json`/`.yml`) is substituted
+
 ### `inquirex version`
 
 Print version information for the TTY adapter and its dependencies.
@@ -273,9 +299,11 @@ inquirex-tty/
     │   ├── run.rb                  # Interactive flow execution
     │   ├── validate.rb             # Definition validation
     │   ├── graph.rb                # Mermaid diagram export
+    │   ├── export.rb               # JSON / YAML serialization
     │   └── version.rb              # Print version info
     ├── renderer.rb                 # Node → tty-prompt widget dispatcher
     ├── flow_loader.rb              # Load .rb flow definitions
+    ├── output_path.rb              # Shared -o/--output path resolution
     ├── ui_helper.rb                # TTY::Box/Pastel/Screen helpers
     └── commands.rb                 # dry-cli command registry
 ```

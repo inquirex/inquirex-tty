@@ -1,4 +1,3 @@
-# rubocop:disable Layout/LineContinuationLeadingSpace
 # frozen_string_literal: true
 
 module Inquirex
@@ -6,10 +5,18 @@ module Inquirex
     module Commands
       # Exports a flow definition as a Mermaid flowchart (stdout or file).
       class Graph < Dry::CLI::Command
-        desc "Export a flow definition as a Mermaid diagram source, an image, or both.\n" \
-             "  Image generation requires mermaid-cli (npm install -g @mermaid-js/mermaid-cli)\n" \
-             "  which this gem will attempt to install for you if mmdc command is not available.\n\n" \
-             "Example:\n  inquirex graph qualify_dsl.rb --format both --output ~/Desktop --open"
+        LONG_DESCRIPTION = "Export a flow definition as a Mermaid diagram source, an image, or both.\n  " \
+                           "Image generation requires mermaid-cli (npm install -g @mermaid-js/mermaid-cli)\n  " \
+                           "which this gem will attempt to install for you if mmdc command is not available.\n\n" \
+                           "Example:\n  inquirex graph qualify_dsl.rb --format both --output ~/Desktop --open"
+
+        SHORT_DESCRIPTION = "Export a flow definition as a Mermaid diagram source, an image, or both."
+
+        if ARGV[0] == "graph"
+          desc LONG_DESCRIPTION
+        else
+          desc SHORT_DESCRIPTION
+        end
 
         argument :flow_file,
           required: true,
@@ -35,21 +42,16 @@ module Inquirex
           definition = FlowLoader.load(flow_file)
           source = Inquirex::Graph::MermaidExporter.new(definition).export
           format = options[:format] || "source"
-          output_pathname = options[:output]
+          output = options[:output]
 
           case format
           when "source"
-            write_source(source, source_output_path(flow_file, output_pathname))
+            write_source(source, OutputPath.resolve(flow_file, output, ".mmd"))
           when "image"
-            write_image(source, flow_file, output_pathname, options[:open])
+            write_image(source, OutputPath.resolve_with_default(flow_file, output, ".png"), options[:open])
           when "both"
-            write_source(source, source_output_path(flow_file, output_pathname))
-            write_image(
-              source,
-              flow_file,
-              image_output_path(flow_file, output_pathname),
-              options[:open]
-            )
+            write_source(source, OutputPath.resolve(flow_file, output, ".mmd"))
+            write_image(source, OutputPath.resolve_with_default(flow_file, output, ".png"), options[:open])
           end
         rescue Inquirex::TTY::Error => e
           warn "Error: #{e.message}"
@@ -63,26 +65,24 @@ module Inquirex
             $stdout.puts source
             return
           end
-          filename = with_default_extension(output_path, ".mmd")
-          File.write(filename, source)
-          warn "Diagram written to #{filename}"
+          File.write(output_path, source)
+          warn "Diagram written to #{output_path}"
         end
 
-        def write_image(source, flow_file, output_path, open_file)
+        def write_image(source, output_path, open_file)
           ensure_mermaid_cli_installed!
-          filename = output_path || image_output_path(flow_file, nil)
 
           Tempfile.create(%w[inquirex-graph .mmd]) do |temp|
             temp.write(source)
             temp.flush
             run_system_command!(
-              "mmdc -i #{Shellwords.escape(temp.path)} -o #{Shellwords.escape(filename)}",
+              "mmdc -i #{Shellwords.escape(temp.path)} -o #{Shellwords.escape(output_path)}",
               "Failed to generate image (mmdc)"
             )
           end
 
-          warn "Diagram written to #{filename}"
-          open_image_file(filename) if open_file
+          warn "Diagram written to #{output_path}"
+          open_image_file(output_path) if open_file
         end
 
         def ensure_mermaid_cli_installed!
@@ -110,43 +110,7 @@ module Inquirex
         def run_system_command!(command, error_message)
           raise Inquirex::TTY::Error, error_message unless system(command)
         end
-
-        def image_output_path(flow_file, output_path)
-          if output_path && File.directory?(output_path)
-            return File.join(output_path, "#{flow_basename(flow_file)}.png")
-          end
-          return with_default_extension(output_path, ".png") if output_path
-
-          "#{flow_basename(flow_file)}.png"
-        end
-
-        def source_output_path(flow_file, output_path)
-          return nil unless output_path
-          if File.directory?(output_path)
-            return File.join(output_path, "#{flow_basename(flow_file)}.mmd")
-          end
-
-          with_default_extension(output_path, ".mmd")
-        end
-
-        def flow_basename(flow_file)
-          File.basename(flow_file, File.extname(flow_file))
-        end
-
-        def with_extension(path, extension)
-          path.sub(%r{\.[^/.]+\z}, extension)
-        end
-
-        def with_default_extension(path, extension)
-          if File.extname(path) == ""
-            "#{path}#{extension}"
-          else
-            with_extension(path, extension)
-          end
-        end
       end
     end
   end
 end
-
-# rubocop:enable Layout/LineContinuationLeadingSpace

@@ -41,16 +41,16 @@ RSpec.describe Inquirex::TTY::Commands::Graph do
     end
   end
 
-  describe "output path resolution" do
+  describe "output path resolution (via OutputPath)" do
     let(:flow_file) { "/tmp/flows/some.flow.definition.json" }
 
     context "when output points to an existing directory" do
       it "derives source and image filenames from flow_file basename" do
         Dir.mktmpdir("graph-output") do |dir|
-          expect(command.send(:source_output_path, flow_file, dir)).to eq(
+          expect(Inquirex::TTY::OutputPath.resolve(flow_file, dir, ".mmd")).to eq(
             File.join(dir, "some.flow.definition.mmd")
           )
-          expect(command.send(:image_output_path, flow_file, dir)).to eq(
+          expect(Inquirex::TTY::OutputPath.resolve_with_default(flow_file, dir, ".png")).to eq(
             File.join(dir, "some.flow.definition.png")
           )
         end
@@ -61,8 +61,8 @@ RSpec.describe Inquirex::TTY::Commands::Graph do
       it "uses that filename and substitutes extension per output type" do
         output = "/tmp/custom-name.anything"
 
-        expect(command.send(:source_output_path, flow_file, output)).to eq("/tmp/custom-name.mmd")
-        expect(command.send(:image_output_path, flow_file, output)).to eq("/tmp/custom-name.png")
+        expect(Inquirex::TTY::OutputPath.resolve(flow_file, output, ".mmd")).to eq("/tmp/custom-name.mmd")
+        expect(Inquirex::TTY::OutputPath.resolve_with_default(flow_file, output, ".png")).to eq("/tmp/custom-name.png")
       end
     end
   end
