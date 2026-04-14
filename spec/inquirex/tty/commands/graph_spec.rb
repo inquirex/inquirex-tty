@@ -2,6 +2,7 @@
 
 require "spec_helper"
 require "tempfile"
+require "tmpdir"
 
 RSpec.describe Inquirex::TTY::Commands::Graph do
   subject(:command) { described_class.new }
@@ -36,6 +37,32 @@ RSpec.describe Inquirex::TTY::Commands::Graph do
       it "exits with status 1" do
         expect { command.call(flow_file: "/no/such/file.rb") }
           .to raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
+      end
+    end
+  end
+
+  describe "output path resolution" do
+    let(:flow_file) { "/tmp/flows/some.flow.definition.json" }
+
+    context "when output points to an existing directory" do
+      it "derives source and image filenames from flow_file basename" do
+        Dir.mktmpdir("graph-output") do |dir|
+          expect(command.send(:source_output_path, flow_file, dir)).to eq(
+            File.join(dir, "some.flow.definition.mmd")
+          )
+          expect(command.send(:image_output_path, flow_file, dir)).to eq(
+            File.join(dir, "some.flow.definition.png")
+          )
+        end
+      end
+    end
+
+    context "when output points to a filename" do
+      it "uses that filename and substitutes extension per output type" do
+        output = "/tmp/custom-name.anything"
+
+        expect(command.send(:source_output_path, flow_file, output)).to eq("/tmp/custom-name.mmd")
+        expect(command.send(:image_output_path, flow_file, output)).to eq("/tmp/custom-name.png")
       end
     end
   end
