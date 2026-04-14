@@ -1,3 +1,5 @@
+[![Ruby](https://github.com/inquirex/inquirex-tty/actions/workflows/main.yml/badge.svg)](https://github.com/inquirex/inquirex-tty/actions/workflows/main.yml) &nbsp;![Coverage](docs/badges/coverage_badge.svg)
+
 # Inquirex::Tty
 
 TODO: Delete this and the text below, and describe your gem
