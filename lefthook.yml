@@ -25,6 +25,7 @@ pre-commit:
     - name: spell check
       run: codespell {staged_files}
       glob: "*.{rb,md,gemspec}"
+      exclude: "examples/*"
 
     - name: format markdown
       run: mdformat {staged_files}
