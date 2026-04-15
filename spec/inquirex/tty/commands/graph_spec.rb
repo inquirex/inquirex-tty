@@ -4,6 +4,9 @@ require "spec_helper"
 require "tempfile"
 require "tmpdir"
 
+# Stubbing `system` on the subject is the right tool here — the command
+# shells out to mermaid-cli and we do not want the real binary on CI.
+# rubocop:disable RSpec/SubjectStub
 RSpec.describe Inquirex::TTY::Commands::Graph do
   subject(:command) { described_class.new }
 
@@ -39,6 +42,89 @@ RSpec.describe Inquirex::TTY::Commands::Graph do
           .to raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
       end
     end
+
+    context "with --format image" do
+      let(:tmpfile) { Tempfile.new(["graph", ".png"]) }
+
+      after { tmpfile.close; tmpfile.unlink }
+
+      before do
+        # Fake a working mermaid-cli install so the CLI never shells out.
+        allow(command).to receive(:system).and_return(true)
+      end
+
+      it "invokes mmdc and writes the image path" do
+        expect do
+          command.call(flow_file: hello_flow_path, format: "image", output: tmpfile.path)
+        end.to output(/Diagram written to .+\.png/).to_stderr
+        expect(command).to have_received(:system).with(/mmdc /).at_least(:once)
+      end
+
+      it "opens the file when --open is true" do
+        expect do
+          command.call(flow_file: hello_flow_path, format: "image", output: tmpfile.path, open: true)
+        end.to output(/Diagram written to/).to_stderr
+        expect(command).to have_received(:system).with(/^open /)
+      end
+    end
+
+    context "with --format both" do
+      let(:dir) { Dir.mktmpdir("graph-both") }
+
+      after { FileUtils.remove_entry(dir) }
+
+      before { allow(command).to receive(:system).and_return(true) }
+
+      it "writes both the source and the image" do
+        expect do
+          command.call(flow_file: hello_flow_path, format: "both", output: dir)
+        end.to output(/Diagram written to/).to_stderr
+        expect(File).to exist(File.join(dir, "hello_flow.mmd"))
+      end
+    end
+
+    context "when mmdc is not installed and npm install fails" do
+      let(:tmpfile) { Tempfile.new(["graph", ".png"]) }
+
+      after { tmpfile.close; tmpfile.unlink }
+
+      before do
+        # command_available? and npm install both fail.
+        allow(command).to receive(:system).and_return(false)
+      end
+
+      it "exits 1 and tells the user how to install" do
+        expect do
+          command.call(flow_file: hello_flow_path, format: "image", output: tmpfile.path)
+        rescue SystemExit
+          # expected
+        end.to output(/Could not install mermaid-cli/).to_stderr
+      end
+    end
+
+    context "when the mmdc invocation itself fails" do
+      let(:tmpfile) { Tempfile.new(["graph", ".png"]) }
+
+      after { tmpfile.close; tmpfile.unlink }
+
+      before do
+        # command_available? returns true, mmdc returns false.
+        call_counter = 0
+        allow(command).to receive(:system) do |_cmd|
+          call_counter += 1
+          # First call is `command -v mmdc` — succeed; everything after fails.
+          call_counter == 1
+        end
+      end
+
+      it "exits 1 with a helpful mmdc error" do
+        expect do
+          command.call(flow_file: hello_flow_path, format: "image", output: tmpfile.path)
+        rescue SystemExit
+          # expected
+        end.to output(/Failed to generate image/).to_stderr
+      end
+    end
   end
 
   describe "output path resolution (via OutputPath)" do
@@ -67,3 +153,4 @@ RSpec.describe Inquirex::TTY::Commands::Graph do
     end
   end
 end
+# rubocop:enable RSpec/SubjectStub

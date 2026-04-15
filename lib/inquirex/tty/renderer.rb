@@ -108,9 +108,12 @@ module Inquirex
       # @param node [Inquirex::Node]
       # @return [void]
       def render_header(node)
-        font  = ::TTY::Font.new(:standard)
-        title = font.write(node.text.upcase)
-        puts pastel.bright_cyan(title)
+        font = ::TTY::Font.new(:doom)
+        title_text = node.text.upcase
+        title_text.split.each do |_word|
+          title = font.write(node.text.upcase)
+          puts pastel.yellow(title)
+        end
         sep(:cyan, "━")
         prompt.keypress(pastel.dim("Press any key to continue..."))
       rescue StandardError
