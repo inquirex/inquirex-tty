@@ -13,7 +13,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/08_tax_preparer.rb
 
-Inquirex::UI.define id: "tax-preparer-2025", version: "1.0.0" do
+Inquirex.define id: "tax-preparer-2025", version: "1.0.0" do
   meta title: "Tax Preparation Intake",
     subtitle: "Help us understand your tax situation"
 

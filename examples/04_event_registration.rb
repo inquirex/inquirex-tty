@@ -9,7 +9,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/04_event_registration.rb
 
-Inquirex::UI.define id: "event-registration", version: "1.0.0" do
+Inquirex.define id: "event-registration", version: "1.0.0" do
   meta title: "Event Registration", subtitle: "Register for the conference"
 
   start :attendee_name

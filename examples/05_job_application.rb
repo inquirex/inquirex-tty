@@ -9,7 +9,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/05_job_application.rb
 
-Inquirex::UI.define id: "job-application", version: "1.0.0" do
+Inquirex.define id: "job-application", version: "1.0.0" do
   meta title: "Job Application", subtitle: "Tell us about yourself"
 
   start :applicant_name

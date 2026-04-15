@@ -34,7 +34,7 @@ US_STATES = %w[
   DC
 ].freeze
 
-Inquirex::UI.define id: "tax-preparer-2025", version: "2.0.0" do
+Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
   meta title: "Tax Preparation Intake",
     subtitle: "Help us scope your return and quote you a fair fee"
 

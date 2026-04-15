@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "inquirex"
-require "inquirex/ui"
+require "inquirex/llm"
 require "dry/cli"
 require "tty-prompt"
 require "tty-box"
@@ -18,7 +18,7 @@ require "tempfile"
 module Inquirex
   # Terminal adapter for Inquirex flows. Renders questions as interactive
   # TTY prompts via tty-prompt, mapping each data type to the appropriate
-  # widget via inquirex-ui widget hints.
+  # widget via Inquirex widget hints.
   #
   # Entry point:
   #   Dry::CLI.new(Inquirex::TTY::Commands).call

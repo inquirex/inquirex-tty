@@ -3,8 +3,8 @@
 module Inquirex
   module TTY
     # Loads a flow definition from a Ruby file by evaluating it in a top-level
-    # binding. The file is expected to call +Inquirex::UI.define+ (or
-    # +Inquirex.define+) and return an +Inquirex::Definition+.
+    # binding. The file is expected to call +Inquirex.define+ and return an
+    # +Inquirex::Definition+.
     class FlowLoader
       # @param path [String] path to a .rb flow definition file
       # @return [Inquirex::Definition]

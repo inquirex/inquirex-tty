@@ -7,7 +7,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/01_hello_world.rb
 
-Inquirex::UI.define id: "hello-world", version: "1.0.0" do
+Inquirex.define id: "hello-world", version: "1.0.0" do
   meta title: "Hello World", subtitle: "A simple introduction"
 
   start :name

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Branching fixture used by validate_spec and renderer_spec.
-Inquirex::UI.define id: "sample", version: "1.0.0" do
+Inquirex.define id: "sample", version: "1.0.0" do
   meta title: "Sample Flow", subtitle: "A test fixture"
 
   start :has_pet

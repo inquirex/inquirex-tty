@@ -1,6 +1,20 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# When this file lives inside a checkout (inquirex-tty/exe/inquirex) we want to
+# use the gems pinned in the repo's Gemfile — NOT whatever rubygems has
+# installed globally. Bundler's `with_unbundled_env`-style bootstrapping:
+# point BUNDLE_GEMFILE at our Gemfile (if present), then require bundler/setup.
+gemfile = File.expand_path("../Gemfile", __dir__)
+if File.file?(gemfile)
+  ENV["BUNDLE_GEMFILE"] = gemfile
+  begin
+    require "bundler/setup"
+  rescue LoadError
+    # Bundler isn't available — fall through to plain $LOAD_PATH priming below.
+  end
+end
+
 if File.directory?("#{__dir__}/../lib")
   $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 end

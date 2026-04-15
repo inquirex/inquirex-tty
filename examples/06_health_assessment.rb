@@ -14,7 +14,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/06_health_assessment.rb
 
-Inquirex::UI.define id: "health-assessment", version: "1.0.0" do
+Inquirex.define id: "health-assessment", version: "1.0.0" do
   meta title: "Health Assessment", subtitle: "Let's assess your health risks"
 
   start :patient_info

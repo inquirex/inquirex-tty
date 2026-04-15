@@ -8,7 +8,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/03_food_preferences.rb
 
-Inquirex::UI.define id: "food-preferences", version: "1.0.0" do
+Inquirex.define id: "food-preferences", version: "1.0.0" do
   meta title: "Food Preferences", subtitle: "Tell us what you enjoy"
 
   start :diet
