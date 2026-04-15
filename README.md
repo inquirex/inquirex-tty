@@ -65,8 +65,12 @@ The CLI walks the user through each step, selecting the appropriate TTY widget f
 Execute a flow interactively. Each step is rendered with the appropriate tty-prompt widget based on the node's data type and widget hints.
 
 ```bash
+# run it and then dump answwrs jsok to stdout
 inquirex run examples/08_tax_preparer.rb
-inquirex run examples/08_tax_preparer.rb --output results.json
+
+# run it and save the anawers to a json file
+inquirex run examples/08_tax_preparer.rb \
+  --output results.json
 ```
 
 Options:
