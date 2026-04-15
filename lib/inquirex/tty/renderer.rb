@@ -3,7 +3,7 @@
 module Inquirex
   module TTY
     # Renders flow nodes as interactive TTY prompts. Dispatches collecting steps
-    # via the node's TTY widget hint (from +Inquirex::UI::WidgetRegistry+ or an
+    # via the node's TTY widget hint (from +Inquirex::WidgetRegistry+ or an
     # explicit +widget target: :tty+ declaration in the DSL).
     #
     # Display verbs render text/boxes and return +nil+; the caller is responsible
@@ -34,8 +34,36 @@ module Inquirex
         @prompt = prompt
       end
 
+      # Prints a "thinking" line before the LLM adapter is called.
+      # Plain colored text — no animation so it plays nicely with piped output.
+      #
+      # @param message [String]
+      # @return [void]
+      def thinking(message)
+        sep(:magenta, "─")
+        puts pastel.bright_magenta.bold(message)
+        sep(:magenta, "─")
+      end
+
+      # Prints the structured data extracted by a clarify step, dimming any
+      # fields the LLM left blank so the user can see what still needs asking.
+      #
+      # @param result [Hash] adapter output
+      # @return [void]
+      def show_extraction(result)
+        puts pastel.bold("📋 LLM extracted:")
+        result.each do |key, value|
+          if value.nil? || (value.respond_to?(:empty?) && value.empty?)
+            puts pastel.dim("  ❓ #{key}: (unknown — will ask)")
+          else
+            puts pastel.green("  ✅ #{key}: #{value.inspect}")
+          end
+        end
+        sep(:magenta, "─")
+      end
+
       # Renders a node. Returns the collected answer, or +nil+ for display verbs.
-      # @param node [Inquirex::Node, Inquirex::UI::Node]
+      # @param node [Inquirex::Node]
       # @return [Object, nil]
       def render(node)
         if node.display?
@@ -93,7 +121,7 @@ module Inquirex
       end
 
       # Gets the effective TTY widget hint and dispatches to the right render method.
-      # @param node [Inquirex::UI::Node, Inquirex::Node]
+      # @param node [Inquirex::Node]
       # @return [Object]
       def render_collecting(node)
         hint = effective_tty_hint(node)
@@ -106,16 +134,16 @@ module Inquirex
       end
 
       # Returns the effective TTY widget hint for a node, with a text_input fallback.
-      # @param node [Inquirex::UI::Node, Inquirex::Node]
-      # @return [Inquirex::UI::WidgetHint]
+      # @param node [Inquirex::Node]
+      # @return [Inquirex::WidgetHint]
       def effective_tty_hint(node)
         hint =
           if node.respond_to?(:effective_widget_hint_for)
             node.effective_widget_hint_for(target: :tty)
           else
-            Inquirex::UI::WidgetRegistry.default_hint_for(node.type, context: :tty)
+            Inquirex::WidgetRegistry.default_hint_for(node.type, context: :tty)
           end
-        hint || Inquirex::UI::WidgetHint.new(type: :text_input)
+        hint || Inquirex::WidgetHint.new(type: :text_input)
       end
 
       # Single-line text.
@@ -199,10 +227,15 @@ module Inquirex
       alias render_textarea     render_multiline
 
       # Returns options suitable for TTY::Prompt select/multi_select.
-      # Inquirex options: Array<String> or Hash{ value => label }.
-      # TTY::Prompt accepts both (Hash key=return value, value=display label).
+      # Inquirex exposes option values via `node.options` and display labels
+      # via `node.option_labels` ({value => label}). TTY::Prompt expects a
+      # Hash in the opposite orientation: {label => return_value}.
       def select_options(node)
-        node.options || []
+        values = node.options || []
+        labels = node.respond_to?(:option_labels) ? node.option_labels : nil
+        return values unless labels && !labels.empty?
+
+        values.to_h { |v| [labels[v] || v, v] }
       end
     end
   end

@@ -6,9 +6,9 @@ RSpec.describe Inquirex::TTY::Renderer do
   let(:prompt) { instance_double(TTY::Prompt) }
   let(:renderer) { described_class.new(prompt:) }
 
-  # Build a UI::Node inline for testing individual render paths.
+  # Build a Node inline for testing individual render paths.
   def make_node(verb:, type: nil, question: "Question?", options: nil, hints: nil)
-    Inquirex::UI::Node.new(
+    Inquirex::Node.new(
       id:           :test,
       verb:,
       type:,
@@ -131,7 +131,7 @@ RSpec.describe Inquirex::TTY::Renderer do
     end
 
     context "with a :mask widget hint" do
-      let(:hint) { Inquirex::UI::WidgetHint.new(type: :mask, options: {}) }
+      let(:hint) { Inquirex::WidgetHint.new(type: :mask, options: {}) }
       let(:node) { make_node(verb: :ask, type: :string, hints: { tty: hint }) }
 
       before { allow(prompt).to receive(:mask).with("Question?").and_return("secret") }

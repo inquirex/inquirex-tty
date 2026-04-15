@@ -265,9 +265,144 @@ end
 | `btw` | Info-styled box (blue border) |
 | `warning` | Warning-styled box (yellow/red) |
 
+## LLM Integration
+
+When a flow contains [inquirex-llm](../inquirex-llm) verbs (`clarify`,
+`describe`, `summarize`, `detour`), the `inquirex run` command automatically:
+
+1. Loads `.env` files, walking up from the current directory and the flow
+   file's directory. Shell-set values take precedence; empty-string keys are
+   treated as unset.
+1. Picks an adapter based on available credentials (see "Adapter selection"
+   below).
+1. Shows a `🧠 Thinking — asking <provider> to extract structured data…`
+   banner while the LLM call is in flight.
+1. For `clarify` steps, splats the extracted fields into the engine's
+   top-level answers via `Engine#prefill!`, so any downstream step with
+   `skip_if not_empty(:field)` is auto-skipped.
+1. Prints a `✅` / `❓` extraction table showing which fields the LLM filled
+   in vs. which ones will still be asked.
+
+### Adapter selection (first match wins)
+
+| Condition | Adapter used |
+|---------------------------------------------|--------------------------------------|
+| `INQUIREX_LLM_ADAPTER=null` | `Inquirex::LLM::NullAdapter` |
+| `INQUIREX_LLM_ADAPTER=anthropic` | `Inquirex::LLM::AnthropicAdapter` |
+| `INQUIREX_LLM_ADAPTER=openai` | `Inquirex::LLM::OpenAIAdapter` |
+| `ANTHROPIC_API_KEY` is set | `Inquirex::LLM::AnthropicAdapter` |
+| `OPENAI_API_KEY` is set | `Inquirex::LLM::OpenAIAdapter` |
+| nothing set | `Inquirex::LLM::NullAdapter` (demo) |
+
+### End-to-end example
+
+`examples/09_tax_preparer_llm.rb` is a complete LLM-assisted tax intake. The
+user types one free-text description of their tax situation; the LLM extracts
+`filing_status`, `dependents`, `income_types`, `state_filing`; the wizard only
+asks for whatever the LLM couldn't determine, then runs a final `summarize`
+for a complexity / fee-estimate write-up.
+
+```ruby
+# examples/09_tax_preparer_llm.rb (excerpt)
+require "inquirex"
+require "inquirex/llm"
+
+Inquirex.define id: "tax-preparer-llm-2025", version: "1.0.0" do
+  meta title: "Tax Prep Intake (LLM-assisted)"
+  start :describe
+
+  ask :describe do
+    type :text
+    question "Describe your 2025 tax situation in your own words…"
+    widget target: :tty, type: :multiline
+    transition to: :extracted
+  end
+
+  clarify :extracted do
+    from :describe
+    prompt <<~PROMPT
+      Extract tax intake fields. Use these EXACT value conventions:
+      filing_status: "single" | "married_filing_jointly" | …
+      income_types:  array of "W2" | "1099" | "Business" | "Investment" | "Rental" | "Retirement"
+      Use "" / 0 / [] for anything the client did not mention.
+    PROMPT
+    schema filing_status: :string,
+           dependents:    :integer,
+           income_types:  :multi_enum,
+           state_filing:  :string
+    model :claude_sonnet
+    temperature 0.0
+    transition to: :filing_status
+  end
+
+  ask :filing_status do
+    type :enum
+    question "What is your filing status?"
+    options(%w[single married_filing_jointly married_filing_separately head_of_household widowed])
+    skip_if not_empty(:filing_status)
+    transition to: :dependents
+  end
+
+  # …same pattern for :dependents, :income_types, :state_filing…
+
+  ask :client_contact do
+    type :string
+    question "Your name and email?"
+    transition to: :summary
+  end
+
+  summarize :summary do
+    from_all
+    prompt "Return JSON: { complexity, fee_estimate_low, fee_estimate_high, red_flags, notes }"
+    transition to: :done
+  end
+
+  say :done do
+    text "Thank you! A tax professional will review your intake and reach out."
+  end
+end
+```
+
+Run it:
+
+```bash
+# Put your key in any .env up the tree — OPENAI_API_KEY or ANTHROPIC_API_KEY
+echo 'OPENAI_API_KEY=sk-…' >> ../.env
+
+inquirex run examples/09_tax_preparer_llm.rb
+```
+
+A typical session (input shortened):
+
+```
+> I'm MFJ with two kids. I'm W-2 at Google, my wife runs a consulting LLC,
+  we have a rental in Oakland and some Coinbase crypto. We live in California.
+
+🧠 Thinking — asking GPT to extract structured data…
+📋 LLM extracted:
+  ✅ filing_status: "married_filing_jointly"
+  ✅ dependents: 2
+  ✅ income_types: ["W2", "Business", "Rental", "Investment"]
+  ✅ state_filing: "California"
+# :filing_status, :dependents, :income_types, :state_filing all auto-skipped.
+# User only gets asked for :client_contact before the summary.
+```
+
+### Troubleshooting
+
+- **"the null adapter"** shown in the thinking banner → no API key was found.
+  Check `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` in your shell or in a `.env`
+  up the directory tree.
+- **`NoMethodError: undefined method 'prefill!'`** → you're running the
+  `inquirex` binary against an older rubygems-installed copy of the core gem.
+  `exe/inquirex` now bootstraps Bundler against the repo's Gemfile
+  automatically, but a global `rake install`'d copy will still be
+  stale — run `rake install` in `../inquirex` to update, or run from a
+  checkout so the shim's Bundler bootstrap takes over.
+
 ## Examples
 
-The gem ships with 8 examples of increasing complexity:
+The gem ships with 10 examples of increasing complexity:
 
 | Example | Description | Steps | Features |
 |---------|-------------|-------|----------|
@@ -279,12 +414,15 @@ The gem ships with 8 examples of increasing complexity:
 | `06_health_assessment.rb` | Three-level branching | 18 | Complex composed rules |
 | `07_loan_application.rb` | Real-world loan intake | 20+ | Currency, 3-level branching |
 | `08_tax_preparer.rb` | Full tax preparation wizard | 18+ | All data types, deep branching |
+| `09_tax_preparer_llm.rb` | **LLM-assisted tax intake** | 9 | `clarify` + `summarize`, `skip_if not_empty`, auto-prefill |
+| `10_real_tax_preparer.rb` | Realistic tax preparer flow | 20+ | Full intake variant |
 
 Run any example:
 
 ```bash
 inquirex run examples/01_hello_world.rb
 inquirex run examples/08_tax_preparer.rb
+inquirex run examples/09_tax_preparer_llm.rb
 ```
 
 Validate all examples:

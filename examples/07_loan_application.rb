@@ -18,7 +18,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/07_loan_application.rb
 
-Inquirex::UI.define id: "loan-application", version: "1.0.0" do
+Inquirex.define id: "loan-application", version: "1.0.0" do
   meta title: "Loan Application", subtitle: "Let's find the right loan for you"
 
   start :applicant_info

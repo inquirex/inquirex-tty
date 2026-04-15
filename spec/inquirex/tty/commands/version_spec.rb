@@ -13,9 +13,5 @@ RSpec.describe Inquirex::TTY::Commands::Version do
     it "outputs the inquirex core version" do
       expect { command.call }.to output(/inquirex\s+#{Regexp.escape(Inquirex::VERSION)}/).to_stdout
     end
-
-    it "outputs the inquirex-ui version" do
-      expect { command.call }.to output(/inquirex-ui\s+#{Regexp.escape(Inquirex::UI::VERSION)}/).to_stdout
-    end
   end
 end

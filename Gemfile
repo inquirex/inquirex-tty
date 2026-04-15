@@ -5,6 +5,9 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in inquirex-tty.gemspec
 gemspec
 
+gem "inquirex"
+gem "inquirex-llm"
+
 gem "irb"
 gem "rake", "~> 13.0"
 

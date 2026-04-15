@@ -8,7 +8,7 @@
 #
 # Run:  bundle exec exe/inquirex-tty run examples/02_yes_or_no.rb
 
-Inquirex::UI.define id: "yes-or-no", version: "1.0.0" do
+Inquirex.define id: "yes-or-no", version: "1.0.0" do
   meta title: "Yes or No", subtitle: "A simple boolean branch"
 
   start :has_pet

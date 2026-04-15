@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.email = ["kigster@gmail.com"]
 
   spec.summary = "Terminal adapter for Inquirex flows — interactive TTY wizard via tty-prompt"
-  spec.description = "Renders Inquirex::UI flow definitions as interactive ANSI terminal wizards " \
+  spec.description = "Renders Inquirex flow definitions as interactive ANSI terminal wizards " \
                      "using tty-prompt, tty-box, and tty-font. Provides a dry-cli command suite: " \
                      "run, validate, graph, version."
   spec.homepage = "https://github.com/flowengine-rb/inquirex-tty"
@@ -34,8 +34,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "dry-cli",     "~> 1.0"
-  spec.add_dependency "inquirex",    "~> 0.2"
-  spec.add_dependency "inquirex-ui", "~> 0.2"
+  spec.add_dependency "inquirex",    "~> 0.3"
+  spec.add_dependency "inquirex-llm", "~> 0.1"
   spec.add_dependency "pastel",      "~> 0.8"
   spec.add_dependency "tty-box",     "~> 0.7"
   spec.add_dependency "tty-font",    "~> 0.5"

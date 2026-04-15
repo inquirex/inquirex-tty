@@ -1,0 +1,53 @@
+{
+  "flow_file": "examples/10_real_tax_preparer.rb",
+  "path_taken": [
+    "intro",
+    "residency_status",
+    "prior_return_available",
+    "filing_status",
+    "dependents_band",
+    "income_types",
+    "w2_count",
+    "state_filing",
+    "state_residency",
+    "foreign_accounts",
+    "surprise_heads_up",
+    "tax_notices",
+    "estimated_payments",
+    "deduction_types",
+    "timeline",
+    "client_email",
+    "thanks"
+  ],
+  "answers": {
+    "residency_status": "us_person",
+    "prior_return_available": "yes_last_year",
+    "filing_status": "married_filing_jointly",
+    "dependents_band": "2",
+    "income_types": [
+      "W2",
+      "1099_nec",
+      "1099_k"
+    ],
+    "w2_count": "2",
+    "state_filing": [
+      "CA",
+      "CO"
+    ],
+    "state_residency": "multi",
+    "foreign_accounts": "no",
+    "tax_notices": [
+      "state_notice"
+    ],
+    "estimated_payments": "none",
+    "deduction_types": [
+      "mortgage",
+      "salt",
+      "hsa_fsa"
+    ],
+    "timeline": "asap",
+    "client_email": "kigster@gmail.com"
+  },
+  "steps_completed": 17,
+  "completed_at": "2026-04-14T16:08:16-07:00"
+}

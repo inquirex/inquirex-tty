@@ -76,7 +76,7 @@ module Inquirex
             temp.write(source)
             temp.flush
             run_system_command!(
-              "mmdc -i #{Shellwords.escape(temp.path)} -o #{Shellwords.escape(output_path)}",
+              "mmdc -w 2000 -i #{Shellwords.escape(temp.path)} -o #{Shellwords.escape(output_path)}",
               "Failed to generate image (mmdc)"
             )
           end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Minimal fixture used by flow_loader_spec and renderer_spec.
-Inquirex::UI.define id: "hello-world", version: "1.0.0" do
+Inquirex.define id: "hello-world", version: "1.0.0" do
   meta title: "Hello World"
 
   start :name
