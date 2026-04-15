@@ -33,9 +33,9 @@ Inquirex.define id: "tax-preparer-llm-2025", version: "1.0.0" do
 
   ask :describe do
     type :text
-    question "Describe your 2025 tax situation in your own words. " \
-             "Mention filing status, kids/dependents, income sources " \
-             "(W-2, business, rental, investments, crypto), and your state. " \
+    question "Please describe your 2025 tax situation in your own words.\n" \
+             "Mention filing status, kids/dependents, income sources\n" \
+             "(W-2, business, rental, investments, crypto), and your state.\n" \
              "Do NOT include SSN or home address."
     widget target: :tty, type: :multiline
     transition to: :extracted

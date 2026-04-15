@@ -167,8 +167,10 @@ module Inquirex
         def show_banner(definition)
           title = definition.meta&.fetch(:title, nil) || "Inquirex"
           font  = ::TTY::Font.new(:standard)
-          puts pastel.bright_green(font.write(title.upcase))
-          sep(:green, "━")
+          title.split.each do |word|
+            puts pastel.bright_yellow(font.write(word))
+          end
+          sep(:green, "❚")
         rescue StandardError
           puts box(definition.meta&.fetch(:title, nil) || "Inquirex Wizard")
         end
