@@ -1,4 +1,9 @@
-# inquirex-tty development tasks
+# © 2026 Konstantin Gredeskoul
+
+set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+
+repo := 'git@github.com:inquirex/inquirex-tty.git'
+version := `grep VERSION lib/inquirex/tty/version.rb | awk '{print $3}' | tr -d '"' | tr -d '\n'`
 
 # Run full test suite with coverage
 test:
@@ -39,3 +44,13 @@ ci: test lint
 
 alias check-all := ci
 
+version:
+    @echo "{{ version }}"
+
+# Tag v{{ version }}, publish the GH release, & refresh the Homebrew tap.
+release:
+    git fetch --tags
+    git tag -f "v{{ version }}"
+    git push -f --tags
+    gh release delete -y "v{{ version }}" --repo {{ repo }} 2>/dev/null || true
+    gh release create "v{{ version }}" --generate-notes --repo {{ repo }}
