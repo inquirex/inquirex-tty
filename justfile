@@ -36,3 +36,6 @@ examples:
 
 # Run all tests then lint
 ci: test lint
+
+alias check-all := ci
+
