@@ -27,6 +27,8 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
+      - name: Bundle Install
+        run: bundle install -j 8
       - name: Run the default task
         run: bundle exec rspec --format documentation
       - name: Run the default task
