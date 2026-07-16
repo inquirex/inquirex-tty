@@ -62,15 +62,16 @@ module Inquirex
           engine
         end
 
-        # Calls the LLM adapter for a clarify/describe/summarize/detour step,
-        # stores the result as the step's answer, and for clarify verbs splats
-        # extracted fields into top-level answers via Engine#prefill! so that
-        # downstream `skip_if not_empty(:key)` rules will fire.
+        # Calls the LLM adapter for an LLM step, stores the result as the step's
+        # answer, and for extract verbs splats the extracted fields into top-level
+        # answers via Engine#prefill! so that downstream `skip_if not_empty(:key)`
+        # rules will fire. `clarify` is a DSL alias for `extract`, so a node built
+        # by either verb reports :extract.
         def run_llm_step(engine, step, adapter, renderer)
           renderer.thinking("🧠 Thinking — asking #{adapter_label(adapter)} to extract structured data…")
           result = adapter.call(step, engine.answers)
           engine.answer(result)
-          if step.verb == :clarify && result.is_a?(Hash)
+          if step.verb == :extract && result.is_a?(Hash)
             engine.prefill!(result)
             renderer.show_extraction(result)
           else
