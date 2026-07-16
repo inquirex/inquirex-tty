@@ -12,8 +12,7 @@
 #   2. :extracted     — clarify step; LLM returns structured fields
 #   3. :filing_status, :dependents, :income_types, :state_filing, :client_contact
 #                     — asked only when the LLM left the field blank
-#   4. :summary       — LLM produces a complexity / fee summary over everything
-#   5. :done          — farewell
+#   4. :done          — farewell
 #
 # Run:
 #   bundle exec exe/inquirex-tty run examples/09_tax_preparer_llm.rb
@@ -38,10 +37,10 @@ Inquirex.define id: "tax-preparer-llm-2025", version: "1.0.0" do
              "(W-2, business, rental, investments, crypto), and your state.\n" \
              "Do NOT include SSN or home address."
     widget target: :tty, type: :multiline
-    transition to: :extracted
+    transition to: :summary
   end
 
-  clarify :extracted do
+  extract :summary do
     from :describe
     prompt <<~PROMPT
       You are a tax-prep intake assistant. Extract structured information from
@@ -75,7 +74,8 @@ Inquirex.define id: "tax-preparer-llm-2025", version: "1.0.0" do
       IMPORTANT: Only include a value when the client's text gives you concrete
       evidence. Do NOT infer or guess. Use null / "" / [] liberally.
     PROMPT
-    schema filing_status: :string,
+    schema \
+      filing_status: :string,
       dependents:    :integer,
       income_types:  :multi_enum,
       state_filing:  :string
@@ -129,19 +129,6 @@ Inquirex.define id: "tax-preparer-llm-2025", version: "1.0.0" do
     type :string
     question "Your name and email (so we can send the quote)?"
     widget target: :tty, type: :text_input
-    transition to: :summary
-  end
-
-  summarize :summary do
-    from_all
-    prompt <<~PROMPT
-      Based on the collected answers, produce a concise JSON object with:
-        - complexity: "simple" | "moderate" | "complex"
-        - fee_estimate_low:  integer USD
-        - fee_estimate_high: integer USD
-        - red_flags: array of short strings (empty array if none)
-        - notes: one-sentence summary for the preparer
-    PROMPT
     transition to: :done
   end
 

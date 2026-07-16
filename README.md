@@ -6,12 +6,6 @@ Terminal adapter for the [Inquirex](https://github.com/inquirex/inquirex) questi
 
 Ships as a CLI (`inquirex`) with commands to run flows interactively, validate definitions, and export Mermaid diagrams.
 
-## Status
-
-- Version: `0.2.1`
-- Ruby: `>= 4.0.0`
-- Depends on: `inquirex`, `tty-prompt`, `tty-box`, `tty-font`, `pastel`, `dry-cli`
-
 ## Installation
 
 ```ruby

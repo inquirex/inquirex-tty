@@ -2,8 +2,15 @@
 
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
-repo := 'git@github.com:inquirex/inquirex-tty.git'
+repo    := 'git@github.com:inquirex/inquirex-tty.git'
 version := `grep VERSION lib/inquirex/tty/version.rb | awk '{print $3}' | tr -d '"' | tr -d '\n'`
+
+[no-exit-message]
+recipes:
+    just --choose
+
+install:
+    bundle check || bundle install -j 12
 
 # Run full test suite with coverage
 test:
@@ -35,7 +42,7 @@ examples:
     set -e
     for f in examples/*.rb; do
         echo "=== $f ==="
-        bundle exec exe/inquirex-tty validate "$f"
+        bundle exec exe/inquirex validate "$f"
         echo ""
     done
 
@@ -43,6 +50,12 @@ examples:
 ci: test lint
 
 alias check-all := ci
+
+clean:
+    #!/usr/bin/env bash
+    /usr/bin/find . -name .DS_Store -delete -print || true
+    rm -rf tmp/*
+
 
 version:
     @echo "{{ version }}"

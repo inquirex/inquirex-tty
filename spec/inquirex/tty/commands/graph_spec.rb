@@ -32,7 +32,7 @@ RSpec.describe Inquirex::TTY::Commands::Graph do
 
       it "writes Mermaid source to the file" do
         command.call(flow_file: hello_flow_path, output: tmpfile.path)
-        expect(File.read(tmpfile.path)).to match(/flowchart/)
+        expect(File.read(tmpfile.path)).to include('flowchart')
       end
     end
 

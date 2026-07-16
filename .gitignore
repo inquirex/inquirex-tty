@@ -1,4 +1,6 @@
 .envrc
+/.idea
+/.claude
 .env
 **/.DS_Store
 /.bundle/
