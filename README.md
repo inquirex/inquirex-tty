@@ -6,12 +6,6 @@ Terminal adapter for the [Inquirex](https://github.com/inquirex/inquirex) questi
 
 Ships as a CLI (`inquirex`) with commands to run flows interactively, validate definitions, and export Mermaid diagrams.
 
-## Status
-
-- Version: `0.2.1`
-- Ruby: `>= 4.0.0`
-- Depends on: `inquirex`, `tty-prompt`, `tty-box`, `tty-font`, `pastel`, `dry-cli`
-
 ## Installation
 
 ```ruby
@@ -267,8 +261,8 @@ end
 
 ## LLM Integration
 
-When a flow contains [inquirex-llm](../inquirex-llm) verbs (`clarify`,
-`describe`, `summarize`, `detour`), the `inquirex run` command automatically:
+When a flow contains an [inquirex-llm](../inquirex-llm) verb — `extract`, or its
+alias `clarify` — the `inquirex run` command automatically:
 
 1. Loads `.env` files, walking up from the current directory and the flow
    file's directory. Shell-set values take precedence; empty-string keys are
@@ -277,7 +271,7 @@ When a flow contains [inquirex-llm](../inquirex-llm) verbs (`clarify`,
    below).
 1. Shows a `🧠 Thinking — asking <provider> to extract structured data…`
    banner while the LLM call is in flight.
-1. For `clarify` steps, splats the extracted fields into the engine's
+1. For `extract` steps, splats the extracted fields into the engine's
    top-level answers via `Engine#prefill!`, so any downstream step with
    `skip_if not_empty(:field)` is auto-skipped.
 1. Prints a `✅` / `❓` extraction table showing which fields the LLM filled
@@ -299,8 +293,8 @@ When a flow contains [inquirex-llm](../inquirex-llm) verbs (`clarify`,
 `examples/09_tax_preparer_llm.rb` is a complete LLM-assisted tax intake. The
 user types one free-text description of their tax situation; the LLM extracts
 `filing_status`, `dependents`, `income_types`, `state_filing`; the wizard only
-asks for whatever the LLM couldn't determine, then runs a final `summarize`
-for a complexity / fee-estimate write-up.
+asks for whatever the LLM couldn't determine, then runs a final `extract` over
+all answers for a complexity / fee-estimate write-up.
 
 ```ruby
 # examples/09_tax_preparer_llm.rb (excerpt)
@@ -351,9 +345,14 @@ Inquirex.define id: "tax-preparer-llm-2025", version: "1.0.0" do
     transition to: :summary
   end
 
-  summarize :summary do
+  extract :summary do
     from_all
-    prompt "Return JSON: { complexity, fee_estimate_low, fee_estimate_high, red_flags, notes }"
+    prompt "Assess complexity and estimate the preparation fee."
+    schema complexity:        :enum,
+           fee_estimate_low:  :integer,
+           fee_estimate_high: :integer,
+           red_flags:         :array,
+           notes:             :text
     transition to: :done
   end
 
@@ -414,8 +413,9 @@ The gem ships with 10 examples of increasing complexity:
 | `06_health_assessment.rb` | Three-level branching | 18 | Complex composed rules |
 | `07_loan_application.rb` | Real-world loan intake | 20+ | Currency, 3-level branching |
 | `08_tax_preparer.rb` | Full tax preparation wizard | 18+ | All data types, deep branching |
-| `09_tax_preparer_llm.rb` | **LLM-assisted tax intake** | 9 | `clarify` + `summarize`, `skip_if not_empty`, auto-prefill |
+| `09_tax_preparer_llm.rb` | **LLM-assisted tax intake** | 9 | `extract` (`clarify`), `skip_if not_empty`, auto-prefill |
 | `10_real_tax_preparer.rb` | Realistic tax preparer flow | 20+ | Full intake variant |
+| `11_llm_keywords.rb` | Minimal `extract` demo | 7 | `extract` schema + `skip_if not_empty` |
 
 Run any example:
 

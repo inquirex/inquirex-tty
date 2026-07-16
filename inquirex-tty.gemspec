@@ -34,8 +34,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "dry-cli",     "~> 1.0"
-  spec.add_dependency "inquirex",    "~> 0.3"
-  spec.add_dependency "inquirex-llm", "~> 0.1"
+  spec.add_dependency "inquirex",    "~> 0.5"
+  spec.add_dependency "inquirex-llm", "~> 0.5"
   spec.add_dependency "pastel",      "~> 0.8"
   spec.add_dependency "tty-box",     "~> 0.7"
   spec.add_dependency "tty-font",    "~> 0.5"

@@ -9,14 +9,14 @@
 #
 # Flow:
 #   1. :describe      — one open-ended question
-#   2. :extracted     — clarify step; LLM returns structured fields
+#   2. :extracted     — extract step; LLM returns structured fields
 #   3. :filing_status, :dependents, :income_types, :state_filing, :client_contact
 #                     — asked only when the LLM left the field blank
-#   4. :summary       — LLM produces a complexity / fee summary over everything
+#   4. :summary       — extract step over all answers; complexity / fee estimate
 #   5. :done          — farewell
 #
 # Run:
-#   bundle exec exe/inquirex-tty run examples/09_tax_preparer_llm.rb
+#   bundle exec exe/inquirex run examples/09_tax_preparer_llm.rb
 #
 # Uses ANTHROPIC_API_KEY from .env (or any parent .env) for live Claude calls.
 # Falls back to Inquirex::LLM::NullAdapter when the key is absent, or when
@@ -132,16 +132,25 @@ Inquirex.define id: "tax-preparer-llm-2025", version: "1.0.0" do
     transition to: :summary
   end
 
-  summarize :summary do
+  extract :summary do
     from_all
     prompt <<~PROMPT
-      Based on the collected answers, produce a concise JSON object with:
-        - complexity: "simple" | "moderate" | "complex"
+      Based on the collected answers, assess the complexity of this client's
+      return and estimate the preparation fee.
+
+        - complexity: exactly one of "simple" | "moderate" | "complex"
         - fee_estimate_low:  integer USD
         - fee_estimate_high: integer USD
         - red_flags: array of short strings (empty array if none)
         - notes: one-sentence summary for the preparer
     PROMPT
+    schema complexity: :enum,
+      fee_estimate_low:  :integer,
+      fee_estimate_high: :integer,
+      red_flags:         :array,
+      notes:             :text
+    model :claude_sonnet
+    temperature 0.0
     transition to: :done
   end
 

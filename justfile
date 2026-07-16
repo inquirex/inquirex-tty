@@ -2,8 +2,15 @@
 
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
-repo := 'git@github.com:inquirex/inquirex-tty.git'
+repo    := 'git@github.com:inquirex/inquirex-tty.git'
 version := `grep VERSION lib/inquirex/tty/version.rb | awk '{print $3}' | tr -d '"' | tr -d '\n'`
+
+[no-exit-message]
+recipes:
+    just --choose
+
+install:
+    bundle check || bundle install -j 12
 
 # Run full test suite with coverage
 test:
@@ -19,15 +26,15 @@ format:
 
 # Run a flow interactively
 run flow_file:
-    bundle exec exe/inquirex-tty run {{flow_file}}
+    bundle exec exe/inquirex run {{flow_file}}
 
 # Validate a flow definition
 validate flow_file:
-    bundle exec exe/inquirex-tty validate {{flow_file}}
+    bundle exec exe/inquirex validate {{flow_file}}
 
 # Export a flow as a Mermaid diagram (stdout)
 graph flow_file:
-    bundle exec exe/inquirex-tty graph {{flow_file}}
+    bundle exec exe/inquirex graph {{flow_file}}
 
 # Validate all examples
 examples:
@@ -35,7 +42,7 @@ examples:
     set -e
     for f in examples/*.rb; do
         echo "=== $f ==="
-        bundle exec exe/inquirex-tty validate "$f"
+        bundle exec exe/inquirex validate "$f"
         echo ""
     done
 
@@ -43,6 +50,12 @@ examples:
 ci: test lint
 
 alias check-all := ci
+
+clean:
+    #!/usr/bin/env bash
+    @find . -name .DS_Store -delete -print || true
+    @rm -rf tmp/*
+
 
 version:
     @echo "{{ version }}"
