@@ -9,7 +9,7 @@ gem "inquirex"
 gem "inquirex-llm"
 
 gem "irb"
-gem "rake", "~> 13.0"
+gem "rake"
 
 gem "rspec",       "~> 3.0"
 gem "rspec-its",   "~> 2.0"

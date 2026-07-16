@@ -135,7 +135,7 @@ DEPENDENCIES
   inquirex-llm
   inquirex-tty!
   irb
-  rake (~> 13.0)
+  rake
   rspec (~> 3.0)
   rspec-its (~> 2.0)
   rubocop (~> 1.21)
