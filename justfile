@@ -1,9 +1,10 @@
 # © 2026 Konstantin Gredeskoul
 
-set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+set shell := ["bash", "-c"]
 
-repo    := 'git@github.com:inquirex/inquirex-tty.git'
+repo := 'git@github.com:inquirex/inquirex-tty.git'
 version := `grep VERSION lib/inquirex/tty/version.rb | awk '{print $3}' | tr -d '"' | tr -d '\n'`
+rbenv := 'eval "$(rbenv init bash)"; bundle exec '
 
 [no-exit-message]
 recipes:
@@ -12,29 +13,31 @@ recipes:
 install:
     bundle check || bundle install -j 12
 
+build: install
+
 # Run full test suite with coverage
-test:
-    bundle exec rspec --format documentation
+test *args: install
+    {{ rbenv }} rspec {{ args }}
 
 # Run RuboCop linter
 lint:
-    bundle exec rubocop
+    {{ rbenv }} rubocop
 
 # Auto-correct RuboCop offenses
 format:
-    bundle exec rubocop -A
+    {{ rbenv }} rubocop -A
 
 # Run a flow interactively
 run flow_file:
-    bundle exec exe/inquirex-tty run {{flow_file}}
+    {{ rbenv }} exe/inquirex-tty run {{flow_file}}
 
 # Validate a flow definition
 validate flow_file:
-    bundle exec exe/inquirex-tty validate {{flow_file}}
+    {{ rbenv }} exe/inquirex-tty validate {{flow_file}}
 
 # Export a flow as a Mermaid diagram (stdout)
 graph flow_file:
-    bundle exec exe/inquirex-tty graph {{flow_file}}
+    {{ rbenv }} exe/inquirex-tty graph {{flow_file}}
 
 # Validate all examples
 examples:
@@ -42,7 +45,7 @@ examples:
     set -e
     for f in examples/*.rb; do
         echo "=== $f ==="
-        bundle exec exe/inquirex validate "$f"
+        {{ rbenv }} exe/inquirex validate "$f"
         echo ""
     done
 
@@ -56,6 +59,9 @@ clean:
     /usr/bin/find . -name .DS_Store -delete -print || true
     rm -rf tmp/*
 
+# Create
+publish: build
+    {{ rbenv }} rake release[remote]
 
 version:
     @echo "{{ version }}"
@@ -67,3 +73,4 @@ release:
     git push -f --tags
     gh release delete -y "v{{ version }}" --repo {{ repo }} 2>/dev/null || true
     gh release create "v{{ version }}" --generate-notes --repo {{ repo }}
+
