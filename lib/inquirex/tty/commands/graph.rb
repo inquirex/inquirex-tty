@@ -54,7 +54,7 @@ module Inquirex
             write_image(source, OutputPath.resolve_with_default(flow_file, output, ".png"), options[:open])
           end
         rescue Inquirex::TTY::Error => e
-          warn "Error: #{e.message}"
+          $stderr.puts "Error: #{e.message}"
           exit 1
         end
 
@@ -66,7 +66,7 @@ module Inquirex
             return
           end
           File.write(output_path, source)
-          warn "Diagram written to #{output_path}"
+          $stderr.puts "Diagram written to #{output_path}"
         end
 
         def write_image(source, output_path, open_file)
@@ -81,14 +81,14 @@ module Inquirex
             )
           end
 
-          warn "Diagram written to #{output_path}"
+          $stderr.puts "Diagram written to #{output_path}"
           open_image_file(output_path) if open_file
         end
 
         def ensure_mermaid_cli_installed!
           return if command_available?("mmdc")
 
-          warn "Installing @mermaid-js/mermaid-cli..."
+          $stderr.puts "Installing @mermaid-js/mermaid-cli..."
           installed = system("npm install -g @mermaid-js/mermaid-cli")
           return if installed && command_available?("mmdc")
 

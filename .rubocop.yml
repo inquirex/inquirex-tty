@@ -96,3 +96,8 @@ RSpec/MultipleExpectations:
 
 Style/SingleArgumentDig:
   Enabled: false
+
+# CLI messages must survive RUBYOPT=W0: Kernel#warn is a documented no-op
+# under -W0, silently swallowing every error message. $stderr.puts is not.
+Style/StderrPuts:
+  Enabled: false

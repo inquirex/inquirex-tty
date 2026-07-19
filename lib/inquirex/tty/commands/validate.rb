@@ -23,10 +23,10 @@ module Inquirex
             exit 1
           end
         rescue Inquirex::TTY::Error => e
-          warn "Error: #{e.message}"
+          $stderr.puts "Error: #{e.message}"
           exit 1
         rescue Inquirex::Errors::Error => e
-          warn "Definition error: #{e.message}"
+          $stderr.puts "Definition error: #{e.message}"
           exit 1
         end
 
@@ -48,8 +48,8 @@ module Inquirex
         end
 
         def print_errors(errors)
-          warn "Flow definition has #{errors.length} error(s):"
-          errors.each { |e| warn "  - #{e}" }
+          $stderr.puts "Flow definition has #{errors.length} error(s):"
+          errors.each { |e| $stderr.puts "  - #{e}" }
         end
 
         def validate_definition(definition)

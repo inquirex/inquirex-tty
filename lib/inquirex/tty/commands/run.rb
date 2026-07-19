@@ -22,7 +22,7 @@ module Inquirex
             File.write(options[:output], json)
             puts "\nResults saved to #{options[:output]}"
           else
-            $stderr.puts json # rubocop:disable Style/StderrPuts
+            $stderr.puts json
           end
         rescue Inquirex::TTY::Error => e
           error(e.message)

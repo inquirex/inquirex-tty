@@ -44,7 +44,7 @@ module Inquirex
           content = serialize(definition, format)
           write(content, flow_file, options[:output], extension_for(format))
         rescue Inquirex::TTY::Error => e
-          warn "Error: #{e.message}"
+          $stderr.puts "Error: #{e.message}"
           exit 1
         end
 
@@ -73,7 +73,7 @@ module Inquirex
           end
 
           File.write(path, content)
-          warn "Exported to #{path}"
+          $stderr.puts "Exported to #{path}"
         end
       end
     end
