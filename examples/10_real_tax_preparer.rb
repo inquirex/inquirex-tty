@@ -49,6 +49,38 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
          "Please do NOT enter any personal information: no names,\n" \
          "SSN, ITIN, addresses, or account numbers. We only need\n" \
          "enough to quote a fee."
+    transition to: :describe
+  end
+
+  # -----------------------------------------------------------------------
+  # Opening
+  # -----------------------------------------------------------------------
+
+  ask :describe do
+    type :text
+    question "Describe your last year's tax situation, your residency/citizenship status, your filing status, any dependents, various income types, which state(s) you are filing in,and whether you have your prior year returns available. If you also participate in businesses, please describe their tax status (S-Corp, LLC, etc), and if you have any foreign investments or property."
+    transition to: :summary
+  end
+
+  extract :summary do
+    from :describe
+    prompt "Extract the filer's tax intake details for scoping: filing_status, " \
+           "number of dependents, income_types, state_filing (which states they " \
+           "file in), residency_status, prior_return_available, and any " \
+           "business_entities they own or partner in."
+    schema filing_status:     { type: :enum, values: %w[single married_filing_jointly married_filing_separately
+                                                        head_of_household widowed] },
+      dependents:             { type: :enum, values: %w[0 1 2 3 4+] },
+      income_types:           { type: :multi_enum, values: %w[W2 1099_nec 1099_k business investment crypto rental
+                                                              retirement social_sec gambling foreign home_sale
+                                                              inheritance none] },
+      state_filing:           { type: :multi_enum, values: US_STATES },
+      residency_status:       { type: :enum, values: %w[us_person resident non_resident dual_status] },
+      prior_return_available: { type: :enum, values: %w[yes_last_year yes_older no first_time] },
+      business_entities:      { type: :multi_enum, values: %w[sole_prop single_llc multi_llc s_corp c_corp
+                                                              partnership trust nonprofit] }
+
+    model :claude_sonnet
     transition to: :residency_status
   end
 
@@ -59,6 +91,7 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
   ask :residency_status do
     type :enum
     question "Which best describes your US tax residency for 2025?"
+    skip_if not_empty(:residency_status)
     options({
       "us_person"    => "US citizen or permanent resident",
       "resident"     => "Resident alien (substantial presence)",
@@ -74,6 +107,7 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
   ask :prior_return_available do
     type :enum
     question "Do you have a copy of your most recent tax return?"
+    skip_if not_empty(:prior_return_available)
     options({
       "yes_last_year" => "Yes, last year's return",
       "yes_older"     => "Yes, but older than last year",
@@ -88,6 +122,7 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
   ask :filing_status do
     type :enum
     question "What is your filing status for 2025?"
+    skip_if not_empty(:filing_status)
     options({
       "single"                    => "Single",
       "married_filing_jointly"    => "Married Filing Jointly",
@@ -98,12 +133,13 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
     widget target: :tty,     type: :select
     widget target: :desktop, type: :radio_group, columns: 1
     widget target: :mobile,  type: :dropdown
-    transition to: :dependents_band
+    transition to: :dependents
   end
 
-  ask :dependents_band do
+  ask :dependents do
     type :enum
     question "How many dependents will you claim?"
+    skip_if not_empty(:dependents)
     options %w[0 1 2 3 4+]
     widget target: :tty,     type: :select
     widget target: :desktop, type: :radio_group, columns: 5
@@ -118,6 +154,7 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
   ask :income_types do
     type :multi_enum
     question "Select every type of income you had in 2025."
+    skip_if not_empty(:income_types)
     options({
       "W2"          => "W-2 wages",
       "1099_nec"    => "1099-NEC (contractor)",
@@ -166,6 +203,7 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
   ask :business_entities do
     type :multi_enum
     question "Which business entity types do you own or partner in?"
+    skip_if not_empty(:business_entities)
     options({
       "sole_prop"   => "Sole Proprietor / Schedule C",
       "single_llc"  => "Single-member LLC",
@@ -435,6 +473,7 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
   ask :state_filing do
     type :multi_enum
     question "Select every state (and DC) you need to file a return in."
+    skip_if not_empty(:state_filing)
     options US_STATES
     widget target: :tty,     type: :multi_select
     widget target: :desktop, type: :checkbox_group, columns: 10, layout: :grid

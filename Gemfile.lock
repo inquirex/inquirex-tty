@@ -1,10 +1,17 @@
 PATH
+  remote: ../inquirex
+  specs:
+    inquirex (0.6.0)
+      ostruct (~> 0.6)
+
+PATH
   remote: .
   specs:
-    inquirex-tty (0.5.0)
+    inquirex-tty (0.6.0)
       dry-cli (~> 1.0)
-      inquirex (~> 0.5)
+      inquirex (~> 0.6)
       inquirex-llm (~> 0.5)
+      ostruct (~> 0.6)
       pastel (~> 0.8)
       tty-box (~> 0.7)
       tty-font (~> 0.5)
@@ -15,12 +22,12 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.3)
+    colored2 (4.0.3)
     coverage-badge (0.1.1)
     diff-lcs (1.6.2)
     docile (1.4.1)
     dry-cli (1.4.1)
     erb (6.0.4)
-    inquirex (0.5.0)
     inquirex-llm (0.5.0)
       inquirex (~> 0.4)
     io-console (0.8.2)
@@ -33,6 +40,7 @@ GEM
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     logger (1.7.0)
+    ostruct (0.6.3)
     parallel (2.1.0)
     parser (3.3.11.1)
       ast (~> 2.4.1)
@@ -130,8 +138,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  colored2
   coverage-badge
-  inquirex
+  inquirex!
   inquirex-llm
   inquirex-tty!
   irb
@@ -145,20 +154,22 @@ DEPENDENCIES
 
 CHECKSUMS
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
+  colored2 (4.0.3) sha256=63e1038183976287efc43034f5cca17fb180b4deef207da8ba78d051cbce2b37
   coverage-badge (0.1.1) sha256=f4ada4edadfa98cd99a50ab49f04ffc1af926e9f00513a063b774bd683eda131
   diff-lcs (1.6.2) sha256=9ae0d2cba7d4df3075fe8cd8602a8604993efc0dfa934cff568969efb1909962
   docile (1.4.1) sha256=96159be799bfa73cdb721b840e9802126e4e03dfc26863db73647204c727f21e
   dry-cli (1.4.1) sha256=b8015bb76c708aa8705a36faf694973e75eeeffca39b89c8e172dc6f66a7d874
   erb (6.0.4) sha256=38e3803694be357fe2bfe312487c74beaf9fb4e5beb3e22498952fe1645b95d9
-  inquirex (0.5.0) sha256=bf2b191dff4dcdf6ed6503708a6e45521cd7054141e3990960b214a6cd79d9b4
+  inquirex (0.6.0)
   inquirex-llm (0.5.0) sha256=500151a8668e070d1af6646faf0cbe14fc70b2c59262718840c779fd82d91872
-  inquirex-tty (0.5.0)
+  inquirex-tty (0.6.0)
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
   json (2.21.1) sha256=13a43df75d95641443f5702dff350f237164a9d811ff0f2c2800d4d980220583
   language_server-protocol (3.17.0.6) sha256=5ef2c0c138f8267e1bc631d3328347d354f96724b0af22f2c79516120443b7f0
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
+  ostruct (0.6.3) sha256=95a2ed4a4bd1d190784e666b47b2d3f078e4a9efda2fccf18f84ddc6538ed912
   parallel (2.1.0) sha256=b35258865c2e31134c5ecb708beaaf6772adf9d5efae28e93e99260877b09356
   parser (3.3.11.1) sha256=d17ace7aabe3e72c3cc94043714be27cc6f852f104d81aa284c2281aecc65d54
   pastel (0.8.0) sha256=481da9fb7d2f6e6b1a08faf11fa10363172dc40fd47848f096ae21209f805a75
