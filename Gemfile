@@ -7,7 +7,7 @@ gemspec
 
 gem "colored2"
 
-gem "inquirex", path: "../inquirex" # local dev override — remove when 0.6.0 is released
+gem "inquirex"
 gem "inquirex-llm"
 
 gem "irb"
