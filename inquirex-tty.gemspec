@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "dry-cli",     "~> 1.0"
   spec.add_dependency "inquirex",    "~> 0.6"
-  spec.add_dependency "inquirex-llm", "~> 0.5"
+  spec.add_dependency "inquirex-llm", "~> 0.6"
   spec.add_dependency "ostruct",     "~> 0.6"
   spec.add_dependency "pastel",      "~> 0.8"
   spec.add_dependency "tty-box",     "~> 0.7"
