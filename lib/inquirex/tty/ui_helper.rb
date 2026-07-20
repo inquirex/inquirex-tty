@@ -59,6 +59,7 @@ module Inquirex
             # @param step_number [Integer] 1-based position in the flow
             # @return [void]
             def next_step(step_id, step_number)
+              puts
               puts pastel.yellow("Step #{step_number}: #{step_id}")
               sep(:yellow, "━")
             end

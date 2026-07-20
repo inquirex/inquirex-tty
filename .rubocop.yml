@@ -112,3 +112,8 @@ Style/SingleArgumentDig:
 # under -W0, silently swallowing every error message. $stderr.puts is not.
 Style/StderrPuts:
   Enabled: false
+
+# The uname member of CompletionMetadata is deliberately an OpenStruct.
+Style/OpenStructUse:
+  Exclude:
+    - "lib/inquirex/tty/commands/run.rb"

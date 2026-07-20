@@ -6,7 +6,7 @@ require "tempfile"
 # `allow_any_instance_of` is the cleanest lever for objects the CLI creates
 # internally (Engine, LLM adapters, TTY::Font) — we would otherwise have to
 # redesign the command for DI just for tests.
-# rubocop:disable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups
+# rubocop:disable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub
 RSpec.describe Inquirex::TTY::Commands::Run do
   subject(:command) { described_class.new }
 
@@ -32,6 +32,8 @@ RSpec.describe Inquirex::TTY::Commands::Run do
         allow(renderer).to receive(:render) do |node|
           node.display? ? nil : "test answer"
         end
+        # Never let the metadata probes touch the real network in specs
+        allow(command).to receive_messages(public_ip: "203.0.113.7", local_ip: "192.168.1.10")
         allow($stdout).to receive(:puts)
         allow($stderr).to receive(:puts)
       end
@@ -49,6 +51,18 @@ RSpec.describe Inquirex::TTY::Commands::Run do
           command.call(flow_file: hello_flow_path, output: tmpfile.path)
           payload = JSON.parse(File.read(tmpfile.path))
           expect(payload).to include("flow_file", "path_taken", "answers", "steps_completed")
+        end
+
+        it "attaches completion metadata to the answers" do
+          command.call(flow_file: hello_flow_path, output: tmpfile.path)
+          metadata = JSON.parse(File.read(tmpfile.path)).dig("answers", "completion_metadata")
+          expect(metadata).to include(
+            "engine"         => "inquirex-tty",
+            "engine_version" => Inquirex::TTY::VERSION,
+            "local_ip"       => "192.168.1.10",
+            "public_ip"      => "203.0.113.7"
+          )
+          expect(metadata["uname"]).to include("sysname", "machine")
         end
       end
     end
@@ -86,6 +100,7 @@ RSpec.describe Inquirex::TTY::Commands::Run do
         # NullAdapter returns Hash so the clarify branch fires
         allow_any_instance_of(Inquirex::LLM::NullAdapter)
           .to receive(:call).and_return({ name: "Alice", role: "sysadmin" })
+        allow(command).to receive_messages(public_ip: nil, local_ip: nil)
         allow($stdout).to receive(:puts)
         allow($stderr).to receive(:puts)
       end
@@ -230,4 +245,4 @@ RSpec.describe Inquirex::TTY::Commands::Run do
     end
   end
 end
-# rubocop:enable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups
+# rubocop:enable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub

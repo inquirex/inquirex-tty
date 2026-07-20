@@ -43,6 +43,8 @@ module Inquirex
           renderer   = Renderer.new
           adapter    = build_llm_adapter
 
+          engine.after_completion { |eng| eng.completion_metadata = build_completion_metadata }
+
           show_banner(definition)
 
           until engine.finished?
@@ -183,10 +185,55 @@ module Inquirex
           {
             flow_file:       flow_file,
             path_taken:      engine.history,
-            answers:         engine.answers,
+            answers:         engine.answers_with_metadata,
             steps_completed: engine.history.length,
             completed_at:    Time.now.iso8601
           }
+        end
+
+        # Rich completion metadata for the answers. Only :engine and
+        # :engine_version are guaranteed — the environment probes are
+        # best-effort: a failing one (offline host, no login name, blocked
+        # egress) yields nil and its member is dropped.
+        #
+        # @return [Inquirex::CompletionMetadata]
+        def build_completion_metadata
+          optional = {
+            uname:     best_effort { OpenStruct.new(Etc.uname) },
+            user:      best_effort { Etc.getlogin },
+            local_ip:  best_effort { local_ip },
+            public_ip: best_effort { public_ip },
+            terminal:  ENV["LC_TERMINAL"] || ENV["TERM_PROGRAM"] || "Unknown"
+          }.compact
+          Inquirex::CompletionMetadata.new(
+            engine:         "inquirex-tty",
+            engine_version: Inquirex::TTY::VERSION,
+            **optional
+          )
+        end
+
+        def best_effort
+          yield
+        rescue StandardError
+          nil
+        end
+
+        # The local address the OS would route out through — a UDP "connect"
+        # picks the outbound interface without sending a single packet.
+        def local_ip
+          UDPSocket.open do |socket|
+            socket.connect("8.8.8.8", 1)
+            socket.addr.last
+          end
+        end
+
+        # Short timeouts so a slow or airgapped network can never stall the
+        # CLI at completion time.
+        def public_ip
+          Net::HTTP.start("api.ipify.org", 443, use_ssl: true, open_timeout: 2, read_timeout: 2) do |http|
+            response = http.get("/")
+            response.is_a?(Net::HTTPSuccess) ? response.body.to_s.strip : nil
+          end
         end
       end
     end

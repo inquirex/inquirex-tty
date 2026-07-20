@@ -14,6 +14,11 @@ require "yaml"
 require "time"
 require "shellwords"
 require "tempfile"
+require "etc"
+require "socket"
+require "net/http"
+require "uri"
+require "ostruct"
 
 # Top-level namespace shared by every gem in the Inquirex family.
 # The core gem defines the DSL, rules, and engine; this gem adds the
