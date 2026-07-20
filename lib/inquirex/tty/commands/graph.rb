@@ -5,11 +5,13 @@ module Inquirex
     module Commands
       # Exports a flow definition as a Mermaid flowchart (stdout or file).
       class Graph < Dry::CLI::Command
+        # Multi-line help text shown by `inquirex graph --help`.
         LONG_DESCRIPTION = "Export a flow definition as a Mermaid diagram source, an image, or both.\n  " \
                            "Image generation requires mermaid-cli (npm install -g @mermaid-js/mermaid-cli)\n  " \
                            "which this gem will attempt to install for you if mmdc command is not available.\n\n" \
                            "Example:\n  inquirex graph qualify_dsl.rb --format both --output ~/Desktop --open"
 
+        # One-line summary shown in the top-level command listing.
         SHORT_DESCRIPTION = "Export a flow definition as a Mermaid diagram source, an image, or both."
 
         if ARGV[0] == "graph"
@@ -54,7 +56,7 @@ module Inquirex
             write_image(source, OutputPath.resolve_with_default(flow_file, output, ".png"), options[:open])
           end
         rescue Inquirex::TTY::Error => e
-          warn "Error: #{e.message}"
+          $stderr.puts "Error: #{e.message}"
           exit 1
         end
 
@@ -66,7 +68,7 @@ module Inquirex
             return
           end
           File.write(output_path, source)
-          warn "Diagram written to #{output_path}"
+          $stderr.puts "Diagram written to #{output_path}"
         end
 
         def write_image(source, output_path, open_file)
@@ -81,14 +83,14 @@ module Inquirex
             )
           end
 
-          warn "Diagram written to #{output_path}"
+          $stderr.puts "Diagram written to #{output_path}"
           open_image_file(output_path) if open_file
         end
 
         def ensure_mermaid_cli_installed!
           return if command_available?("mmdc")
 
-          warn "Installing @mermaid-js/mermaid-cli..."
+          $stderr.puts "Installing @mermaid-js/mermaid-cli..."
           installed = system("npm install -g @mermaid-js/mermaid-cli")
           return if installed && command_available?("mmdc")
 

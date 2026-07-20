@@ -18,6 +18,11 @@ module Inquirex
 
       # Resolves an output path, returning nil when the caller should use stdout.
       #
+      # @example Resolve the --output option for a JSON export
+      #   OutputPath.resolve("flows/intake.rb", nil, ".json")    # => nil (stdout)
+      #   OutputPath.resolve("flows/intake.rb", "out", ".json")  # => "out.json"
+      #   OutputPath.resolve("flows/intake.rb", "/tmp", ".json") # => "/tmp/intake.json"
+      #
       # @param flow_file [String] source .rb flow file (basename used for defaults)
       # @param output    [String, nil] value of the --output option
       # @param extension [String] including leading dot, e.g. ".json"

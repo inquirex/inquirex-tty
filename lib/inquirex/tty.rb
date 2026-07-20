@@ -15,6 +15,9 @@ require "time"
 require "shellwords"
 require "tempfile"
 
+# Top-level namespace shared by every gem in the Inquirex family.
+# The core gem defines the DSL, rules, and engine; this gem adds the
+# terminal adapter under {Inquirex::TTY}.
 module Inquirex
   # Terminal adapter for Inquirex flows. Renders questions as interactive
   # TTY prompts via tty-prompt, mapping each data type to the appropriate
