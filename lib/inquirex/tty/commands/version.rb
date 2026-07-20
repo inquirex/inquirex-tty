@@ -7,7 +7,9 @@ module Inquirex
       class Version < Dry::CLI::Command
         desc "Print version information"
 
-        # @param **_ [Hash] ignored options
+        # Prints the version of this gem and of the core inquirex gem.
+        # Any CLI options are accepted and ignored.
+        #
         # @return [void]
         def call(**)
           puts "inquirex-tty #{Inquirex::TTY::VERSION}"

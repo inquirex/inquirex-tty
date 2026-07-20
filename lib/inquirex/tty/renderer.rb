@@ -63,6 +63,13 @@ module Inquirex
       end
 
       # Renders a node. Returns the collected answer, or +nil+ for display verbs.
+      #
+      # @example Collect an answer for the current step
+      #   renderer = Inquirex::TTY::Renderer.new
+      #   step   = engine.current_step
+      #   answer = renderer.render(step) # nil for display verbs
+      #   engine.answer(answer) unless step.display?
+      #
       # @param node [Inquirex::Node]
       # @return [Object, nil]
       def render(node)

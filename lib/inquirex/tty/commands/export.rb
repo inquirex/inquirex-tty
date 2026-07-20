@@ -12,9 +12,11 @@ module Inquirex
       #   inquirex export examples/08_tax_preparer.rb -f yml -o . # write 08_tax_preparer.yml to cwd
       #   inquirex export examples/08_tax_preparer.rb -o out.json # write to out.json
       class Export < Dry::CLI::Command
+        # Multi-line help text shown by `inquirex export --help`.
         LONG_DESCRIPTION = "Export a flow definition as JSON or YAML.\n\n" \
                            "Example:\n  inquirex export examples/08_tax_preparer.rb -f yml -o ."
 
+        # One-line summary shown in the top-level command listing.
         SHORT_DESCRIPTION = "Export a flow definition as JSON or YAML ."
 
         if ARGV[0] == "export"

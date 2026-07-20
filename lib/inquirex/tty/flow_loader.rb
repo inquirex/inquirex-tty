@@ -6,6 +6,12 @@ module Inquirex
     # binding. The file is expected to call +Inquirex.define+ and return an
     # +Inquirex::Definition+.
     class FlowLoader
+      # Loads and evaluates a flow definition file in one call.
+      #
+      # @example Load a flow definition from disk
+      #   definition = Inquirex::TTY::FlowLoader.load("examples/08_tax_preparer.rb")
+      #   definition.step_ids # => [:filing_status, :dependents, ...]
+      #
       # @param path [String] path to a .rb flow definition file
       # @return [Inquirex::Definition]
       # @raise [Inquirex::TTY::Error] if file is missing, not .rb, or has syntax errors

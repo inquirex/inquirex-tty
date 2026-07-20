@@ -5,11 +5,13 @@ module Inquirex
     module Commands
       # Exports a flow definition as a Mermaid flowchart (stdout or file).
       class Graph < Dry::CLI::Command
+        # Multi-line help text shown by `inquirex graph --help`.
         LONG_DESCRIPTION = "Export a flow definition as a Mermaid diagram source, an image, or both.\n  " \
                            "Image generation requires mermaid-cli (npm install -g @mermaid-js/mermaid-cli)\n  " \
                            "which this gem will attempt to install for you if mmdc command is not available.\n\n" \
                            "Example:\n  inquirex graph qualify_dsl.rb --format both --output ~/Desktop --open"
 
+        # One-line summary shown in the top-level command listing.
         SHORT_DESCRIPTION = "Export a flow definition as a Mermaid diagram source, an image, or both."
 
         if ARGV[0] == "graph"

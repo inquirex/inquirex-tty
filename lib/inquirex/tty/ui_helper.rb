@@ -12,6 +12,13 @@ module Inquirex
           @pastel ||= Pastel.new
         end
 
+        # Module hook that installs the UI helpers on the including class:
+        # +tty_box+, +tty_screen+, +pastel+, the TTY::Box wrappers (+frame+,
+        # +info+, +success+, +error+, +warning+), the +width+ delegator, and
+        # the +box+ / +next_step+ / +sep+ convenience methods.
+        #
+        # @param base [Class, Module] the class or module including UIHelper
+        # @return [void]
         def included(base)
           base.extend(Forwardable)
           base.define_method(:tty_box)    { ::TTY::Box }
@@ -27,6 +34,12 @@ module Inquirex
 
           base.class_eval do
             # Draw a bordered box with optional title.
+            #
+            # @param text [String] text to display inside the box
+            # @param title [String, nil] optional title on the top border
+            # @param bg [Symbol] background color name
+            # @param fg [Symbol] foreground color name
+            # @return [void]
             def box(text, title: nil, bg: :green, fg: :white) # rubocop:disable Naming/MethodParameterName
               w = [width, 80].min
               args = {
@@ -41,12 +54,20 @@ module Inquirex
             end
 
             # Print step progress and separator.
+            #
+            # @param step_id [Symbol, String] id of the step about to run
+            # @param step_number [Integer] 1-based position in the flow
+            # @return [void]
             def next_step(step_id, step_number)
               puts pastel.yellow("Step #{step_number}: #{step_id}")
               sep(:yellow, "━")
             end
 
             # Print a full-width separator in the given color.
+            #
+            # @param color [Symbol] Pastel color name
+            # @param char [String] character repeated across the line
+            # @return [void]
             def sep(color = :yellow, char = "━")
               puts pastel.send(color, char * 80)
             end
