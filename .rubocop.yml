@@ -1,6 +1,16 @@
 inherit_from:
   - .relaxed_rubocop.yml
 
+# Without this, the AllCops/Exclude list below REPLACES RuboCop's defaults
+# (vendor/**/*, node_modules/**/*, tmp/**/*, .git/**/*) instead of adding to
+# them. That is not academic: with `bundler-cache: true` the CI runner installs
+# gems into <repo>/vendor/bundle, RuboCop then walks into the vendored gems,
+# loads a gem's own .rubocop.yml, and dies with
+# "cannot load such file -- rubocop-rake" (exit 2) before linting anything.
+inherit_mode:
+  merge:
+    - Exclude
+
 AllCops:
   SuggestExtensions: false
   TargetRubyVersion: 4.0
@@ -9,6 +19,7 @@ AllCops:
     - "**/*.rb"
   Exclude:
     - "bin/**/*"
+    - "vendor/**/*"
 
 Layout/HashAlignment:
   EnforcedHashRocketStyle: table

@@ -27,11 +27,12 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-      - name: Bundle Install
-        run: bundle install -j 8
-      - name: Run the default task
+          # Installs gems into <repo>/vendor/bundle and caches them between
+          # runs. Safe now that AllCops/Exclude keeps RuboCop out of vendor/.
+          bundler-cache: true
+      - name: Run Specs
         run: bundle exec rspec --format documentation
-      - name: Run the default task
+      - name: Run RuboCop
         run: bundle exec rubocop
       - name: Validate Examples
         run: just examples
