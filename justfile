@@ -4,7 +4,11 @@ set shell := ["bash", "-c"]
 
 repo := 'git@github.com:inquirex/inquirex-tty.git'
 version := `grep VERSION lib/inquirex/tty/version.rb | awk '{print $3}' | tr -d '"' | tr -d '\n'`
-rbenv := 'eval "$(rbenv init bash)"; bundle exec '
+# The `-` matters: `rbenv init bash` prints human instructions ("skipping
+# ~/.bash_login: already configured"), which eval then tries to run and the
+# recipe dies with "skipping: command not found". `rbenv init - bash` prints
+# the shell code that is meant to be eval'd.
+rbenv := 'eval "$(rbenv init - bash 2>/dev/null || true)"; bundle exec '
 
 [no-exit-message]
 recipes:
@@ -29,15 +33,15 @@ format:
 
 # Run a flow interactively
 run flow_file:
-    {{ rbenv }} exe/inquirex-tty run {{flow_file}}
+    {{ rbenv }} exe/inquirex run {{flow_file}}
 
 # Validate a flow definition
 validate flow_file:
-    {{ rbenv }} exe/inquirex-tty validate {{flow_file}}
+    {{ rbenv }} exe/inquirex validate {{flow_file}}
 
 # Export a flow as a Mermaid diagram (stdout)
 graph flow_file:
-    {{ rbenv }} exe/inquirex-tty graph {{flow_file}}
+    {{ rbenv }} exe/inquirex graph {{flow_file}}
 
 # Validate all examples
 examples:
