@@ -4,7 +4,7 @@
 
 Terminal adapter for the [Inquirex](https://github.com/inquirex/inquirex) questionnaire engine. Renders flow definitions as interactive ANSI terminal wizards using [tty-prompt](https://github.com/piotrmurach/tty-prompt), with ASCII-art headers, styled boxes, and automatic widget selection based on data types.
 
-Ships as a CLI (`inquirex`) with commands to run flows interactively, validate definitions, and export Mermaid diagrams.
+Ships as a CLI (`inquirex-tty`) with commands to run flows interactively, validate definitions, and export Mermaid diagrams.
 
 ## Installation
 
@@ -12,7 +12,7 @@ Ships as a CLI (`inquirex`) with commands to run flows interactively, validate d
 gem "inquirex-tty"
 ```
 
-The gem installs an `inquirex` executable.
+The gem installs an `inquirex-tty` executable.
 
 ## Quick Start
 
@@ -47,30 +47,30 @@ end
 Run it:
 
 ```bash
-inquirex run my_flow.rb
+inquirex-tty run my_flow.rb
 ```
 
 The CLI walks the user through each step, selecting the appropriate TTY widget for each data type, and prints collected answers as JSON when the flow completes.
 
 ## CLI Commands
 
-### `inquirex run <flow_file>`
+### `inquirex-tty run <flow_file>`
 
 Execute a flow interactively. Each step is rendered with the appropriate tty-prompt widget based on the node's data type and widget hints.
 
 ```bash
 # run it and then dump answers as json to stdout
-inquirex run examples/08_tax_preparer.rb
+inquirex-tty run examples/08_tax_preparer.rb
 
 # run it and save the anawers to a json file
-inquirex run examples/08_tax_preparer.rb \
+inquirex-tty run examples/08_tax_preparer.rb \
   --output answers.json
 ```
 
 Options:
 
-| Flag | Description |
-|------|-------------|
+| Flag             | Description                                    |
+| ---------------- | ---------------------------------------------- |
 | `--output`, `-o` | Write JSON results to a file instead of stderr |
 
 On completion, outputs a JSON summary:
@@ -98,7 +98,7 @@ On completion, outputs a JSON summary:
 }
 ```
 
-### `inquirex validate <flow_file>`
+### `inquirex-tty validate <flow_file>`
 
 Check that a flow definition is well-formed without running it. Validates:
 
@@ -107,49 +107,49 @@ Check that a flow definition is well-formed without running it. Validates:
 - All steps are reachable from the start step (detects orphans)
 
 ```bash
-inquirex validate examples/08_tax_preparer.rb
+inquirex-tty validate examples/08_tax_preparer.rb
 ```
 
-### `inquirex graph <flow_file>`
+### `inquirex-tty graph <flow_file>`
 
 Export the flow as a [Mermaid](https://mermaid.js.org/) diagram source, an image, or both.
 
 ```bash
-inquirex graph examples/08_tax_preparer.rb                                       # Mermaid source to stdout
-inquirex graph examples/08_tax_preparer.rb --output flow.mmd                     # write source to a file
-inquirex graph examples/08_tax_preparer.rb --format image -o flow.svg            # SVG via mmdc
-inquirex graph examples/08_tax_preparer.rb --format both --output ~/Desktop      # source + image into a directory
-inquirex graph examples/08_tax_preparer.rb --format image --open                 # SVG + open in viewer
+inquirex-tty graph examples/08_tax_preparer.rb                                       # Mermaid source to stdout
+inquirex-tty graph examples/08_tax_preparer.rb --output flow.mmd                     # write source to a file
+inquirex-tty graph examples/08_tax_preparer.rb --format image -o flow.svg            # SVG via mmdc
+inquirex-tty graph examples/08_tax_preparer.rb --format both --output ~/Desktop      # source + image into a directory
+inquirex-tty graph examples/08_tax_preparer.rb --format image --open                 # SVG + open in viewer
 ```
 
 Options:
 
-| Flag | Description |
-|------|-------------|
-| `--output`, `-o` | Output file or directory (default: stdout) |
-| `--format`, `-f` | `source` (default), `image` (SVG via `mmdc`), or `both` |
-| `--open`, `-p` | Open the generated image in the system viewer (default: false) |
+| Flag             | Description                                                    |
+| ---------------- | -------------------------------------------------------------- |
+| `--output`, `-o` | Output file or directory (default: stdout)                     |
+| `--format`, `-f` | `source` (default), `image` (SVG via `mmdc`), or `both`        |
+| `--open`, `-p`   | Open the generated image in the system viewer (default: false) |
 
 Image generation requires [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) (`npm install -g @mermaid-js/mermaid-cli`). The command attempts to install it automatically if `mmdc` is not on your `PATH`.
 
-### `inquirex export <flow_file>`
+### `inquirex-tty export <flow_file>`
 
 Export the flow definition as JSON or YAML. Useful for serving flows to frontend adapters (the JS widget, Rails API, etc.) or for inspecting the wire format.
 
 ```bash
-inquirex export examples/08_tax_preparer.rb                          # pretty JSON to stdout
-inquirex export examples/08_tax_preparer.rb -f yml                   # YAML to stdout
-inquirex export examples/08_tax_preparer.rb -o .                     # write 08_tax_preparer.json to cwd
-inquirex export examples/08_tax_preparer.rb -f yml -o ~/flows        # write 08_tax_preparer.yml to ~/flows
-inquirex export examples/08_tax_preparer.rb -o out.json              # write to named file
-inquirex export examples/08_tax_preparer.rb -f yml -o out            # appends .yml → out.yml
+inquirex-tty export examples/08_tax_preparer.rb                          # pretty JSON to stdout
+inquirex-tty export examples/08_tax_preparer.rb -f yml                   # YAML to stdout
+inquirex-tty export examples/08_tax_preparer.rb -o .                     # write 08_tax_preparer.json to cwd
+inquirex-tty export examples/08_tax_preparer.rb -f yml -o ~/flows        # write 08_tax_preparer.yml to ~/flows
+inquirex-tty export examples/08_tax_preparer.rb -o out.json              # write to named file
+inquirex-tty export examples/08_tax_preparer.rb -f yml -o out            # appends .yml → out.yml
 ```
 
 Options:
 
-| Flag | Description |
-|------|-------------|
-| `--format`, `-f` | `json` (default), `yaml`, or `yml` |
+| Flag             | Description                                |
+| ---------------- | ------------------------------------------ |
+| `--format`, `-f` | `json` (default), `yaml`, or `yml`         |
 | `--output`, `-o` | Output file or directory (default: stdout) |
 
 Output path rules:
@@ -158,12 +158,12 @@ Output path rules:
 - `--output <dir>` (existing directory) → write `<flow-basename>.<ext>` inside it
 - `--output <file>` → use that filename; if the extension is missing or mismatched, the appropriate one (`.json`/`.yml`) is substituted
 
-### `inquirex version`
+### `inquirex-tty version`
 
 Print version information for the TTY adapter and its dependencies.
 
 ```bash
-inquirex version
+inquirex-tty version
 ```
 
 ## Example Session
@@ -171,7 +171,7 @@ inquirex version
 Running the tax preparation intake example:
 
 ```
-$ inquirex run examples/08_tax_preparer.rb
+$ inquirex-tty run examples/08_tax_preparer.rb
 
   _____      _     __  __   ____    ____    _____   ____       _      ____       _      _____   ___    ___    _   _    ___   _   _   _____      _      _  __  _____
  |_   _|    / \    \ \/ /  |  _ \  |  _ \  | ____| |  _ \     / \    |  _ \     / \    |_   _| |_ _|  / _ \  | \ | |  |_ _| | \ | | |_   _|    / \    | |/ / | ____|
@@ -226,17 +226,17 @@ Press any key to continue...
 
 The renderer selects a tty-prompt method for each node based on the `:tty` widget hint from `WidgetRegistry`:
 
-| Widget Hint | tty-prompt Method | Used For |
-|-------------|-------------------|----------|
-| `text_input` | `prompt.ask` | `:string`, `:date`, `:email`, `:phone` |
-| `multiline` | `prompt.multiline` | `:text` |
-| `number_input` | `prompt.ask` (with `convert:`) | `:integer`, `:decimal`, `:currency` |
-| `yes_no` | `prompt.yes?` | `:boolean` / `confirm` |
-| `select` | `prompt.select` | `:enum` |
-| `multi_select` | `prompt.multi_select` | `:multi_enum` |
-| `enum_select` | `prompt.enum_select` | Numbered menu variant |
-| `mask` | `prompt.mask` | Password/hidden input |
-| `slider` | `prompt.slider` | Numeric range |
+| Widget Hint    | tty-prompt Method              | Used For                               |
+| -------------- | ------------------------------ | -------------------------------------- |
+| `text_input`   | `prompt.ask`                   | `:string`, `:date`, `:email`, `:phone` |
+| `multiline`    | `prompt.multiline`             | `:text`                                |
+| `number_input` | `prompt.ask` (with `convert:`) | `:integer`, `:decimal`, `:currency`    |
+| `yes_no`       | `prompt.yes?`                  | `:boolean` / `confirm`                 |
+| `select`       | `prompt.select`                | `:enum`                                |
+| `multi_select` | `prompt.multi_select`          | `:multi_enum`                          |
+| `enum_select`  | `prompt.enum_select`           | Numbered menu variant                  |
+| `mask`         | `prompt.mask`                  | Password/hidden input                  |
+| `slider`       | `prompt.slider`                | Numeric range                          |
 
 You can override the default by setting an explicit `:tty` widget hint in the DSL:
 
@@ -252,49 +252,37 @@ end
 
 ## Display Verbs
 
-| Verb | Rendering |
-|------|-----------|
-| `header` | Large ASCII-art text via TTY::Font (falls back to TTY::Box) |
-| `say` | Plain text with "Press any key to continue..." |
-| `btw` | Info-styled box (blue border) |
-| `warning` | Warning-styled box (yellow/red) |
+| Verb      | Rendering                                                   |
+| --------- | ----------------------------------------------------------- |
+| `header`  | Large ASCII-art text via TTY::Font (falls back to TTY::Box) |
+| `say`     | Plain text with "Press any key to continue..."              |
+| `btw`     | Info-styled box (blue border)                               |
+| `warning` | Warning-styled box (yellow/red)                             |
 
 ## LLM Integration
 
-When a flow contains [inquirex-llm](../inquirex-llm) verbs (`clarify`,
-`describe`, `summarize`, `detour`), the `inquirex run` command automatically:
+When a flow contains [inquirex-llm](../inquirex-llm) verbs (`clarify`, `describe`, `summarize`, `detour`), the `inquirex-tty run` command automatically:
 
-1. Loads `.env` files, walking up from the current directory and the flow
-   file's directory. Shell-set values take precedence; empty-string keys are
-   treated as unset.
-1. Picks an adapter based on available credentials (see "Adapter selection"
-   below).
-1. Shows a `🧠 Thinking — asking <provider> to extract structured data…`
-   banner while the LLM call is in flight.
-1. For `clarify` steps, splats the extracted fields into the engine's
-   top-level answers via `Engine#prefill!`, so any downstream step with
-   `skip_if not_empty(:field)` is auto-skipped.
-1. Prints a `✅` / `❓` extraction table showing which fields the LLM filled
-   in vs. which ones will still be asked.
+1. Loads `.env` files, walking up from the current directory and the flow file's directory. Shell-set values take precedence; empty-string keys are treated as unset.
+1. Picks an adapter based on available credentials (see "Adapter selection" below).
+1. Shows a `🧠 Thinking — asking <provider> to extract structured data…` banner while the LLM call is in flight.
+1. For `clarify` steps, splats the extracted fields into the engine's top-level answers via `Engine#prefill!`, so any downstream step with `skip_if not_empty(:field)` is auto-skipped.
+1. Prints a `✅` / `❓` extraction table showing which fields the LLM filled in vs. which ones will still be asked.
 
 ### Adapter selection (first match wins)
 
-| Condition | Adapter used |
-|---------------------------------------------|--------------------------------------|
-| `INQUIREX_LLM_ADAPTER=null` | `Inquirex::LLM::NullAdapter` |
-| `INQUIREX_LLM_ADAPTER=anthropic` | `Inquirex::LLM::AnthropicAdapter` |
-| `INQUIREX_LLM_ADAPTER=openai` | `Inquirex::LLM::OpenAIAdapter` |
-| `ANTHROPIC_API_KEY` is set | `Inquirex::LLM::AnthropicAdapter` |
-| `OPENAI_API_KEY` is set | `Inquirex::LLM::OpenAIAdapter` |
-| nothing set | `Inquirex::LLM::NullAdapter` (demo) |
+| Condition                        | Adapter used                        |
+| -------------------------------- | ----------------------------------- |
+| `INQUIREX_LLM_ADAPTER=null`      | `Inquirex::LLM::NullAdapter`        |
+| `INQUIREX_LLM_ADAPTER=anthropic` | `Inquirex::LLM::AnthropicAdapter`   |
+| `INQUIREX_LLM_ADAPTER=openai`    | `Inquirex::LLM::OpenAIAdapter`      |
+| `ANTHROPIC_API_KEY` is set       | `Inquirex::LLM::AnthropicAdapter`   |
+| `OPENAI_API_KEY` is set          | `Inquirex::LLM::OpenAIAdapter`      |
+| nothing set                      | `Inquirex::LLM::NullAdapter` (demo) |
 
 ### End-to-end example
 
-`examples/09_tax_preparer_llm.rb` is a complete LLM-assisted tax intake. The
-user types one free-text description of their tax situation; the LLM extracts
-`filing_status`, `dependents`, `income_types`, `state_filing`; the wizard only
-asks for whatever the LLM couldn't determine, then runs a final `summarize`
-for a complexity / fee-estimate write-up.
+`examples/09_tax_preparer_llm.rb` is a complete LLM-assisted tax intake. The user types one free-text description of their tax situation; the LLM extracts `filing_status`, `dependents`, `income_types`, `state_filing`; the wizard only asks for whatever the LLM couldn't determine, then runs a final `summarize` for a complexity / fee-estimate write-up.
 
 ```ruby
 # examples/09_tax_preparer_llm.rb (excerpt)
@@ -363,7 +351,7 @@ Run it:
 # Put your key in any .env up the tree — OPENAI_API_KEY or ANTHROPIC_API_KEY
 echo 'OPENAI_API_KEY=sk-…' >> ../.env
 
-inquirex run examples/09_tax_preparer_llm.rb
+inquirex-tty run examples/09_tax_preparer_llm.rb
 ```
 
 A typical session (input shortened):
@@ -384,52 +372,45 @@ A typical session (input shortened):
 
 ### Troubleshooting
 
-- **"the null adapter"** shown in the thinking banner → no API key was found.
-  Check `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` in your shell or in a `.env`
-  up the directory tree.
-- **`NoMethodError: undefined method 'prefill!'`** → you're running the
-  `inquirex` binary against an older rubygems-installed copy of the core gem.
-  `exe/inquirex` now bootstraps Bundler against the repo's Gemfile
-  automatically, but a global `rake install`'d copy will still be
-  stale — run `rake install` in `../inquirex` to update, or run from a
-  checkout so the shim's Bundler bootstrap takes over.
+- **"the null adapter"** shown in the thinking banner → no API key was found. Check `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` in your shell or in a `.env` up the directory tree.
+- **`NoMethodError: undefined method 'prefill!'`** → you're running the `inquirex-tty` binary against an older rubygems-installed copy of the core gem. `exe/inquirex-tty` now bootstraps Bundler against the repo's Gemfile automatically, but a global `rake install`'d copy will still be stale — run `rake install` in `../inquirex` to update, or run from a checkout so the shim's Bundler bootstrap takes over.
 
 ## Examples
 
 The gem ships with 10 examples of increasing complexity:
 
-| Example | Description | Steps | Features |
-|---------|-------------|-------|----------|
-| `01_hello_world.rb` | Minimal flow | 3 | String and integer input |
-| `02_yes_or_no.rb` | Boolean branching | 3 | `confirm`, `equals` rule |
-| `03_food_preferences.rb` | Multi-select branching | 6 | `multi_enum`, `contains` rule |
-| `04_event_registration.rb` | Two-level branching | 9 | Nested conditionals |
-| `05_job_application.rb` | Composed rules | 13 | `all()`, `any()`, `greater_than` |
-| `06_health_assessment.rb` | Three-level branching | 18 | Complex composed rules |
-| `07_loan_application.rb` | Real-world loan intake | 20+ | Currency, 3-level branching |
-| `08_tax_preparer.rb` | Full tax preparation wizard | 18+ | All data types, deep branching |
-| `09_tax_preparer_llm.rb` | **LLM-assisted tax intake** | 9 | `clarify` + `summarize`, `skip_if not_empty`, auto-prefill |
-| `10_real_tax_preparer.rb` | Realistic tax preparer flow | 20+ | Full intake variant |
+| Example                    | Description                 | Steps | Features                                                   |
+| -------------------------- | --------------------------- | ----- | ---------------------------------------------------------- |
+| `01_hello_world.rb`        | Minimal flow                | 3     | String and integer input                                   |
+| `02_yes_or_no.rb`          | Boolean branching           | 3     | `confirm`, `equals` rule                                   |
+| `03_food_preferences.rb`   | Multi-select branching      | 6     | `multi_enum`, `contains` rule                              |
+| `04_event_registration.rb` | Two-level branching         | 9     | Nested conditionals                                        |
+| `05_job_application.rb`    | Composed rules              | 13    | `all()`, `any()`, `greater_than`                           |
+| `06_health_assessment.rb`  | Three-level branching       | 18    | Complex composed rules                                     |
+| `07_loan_application.rb`   | Real-world loan intake      | 20+   | Currency, 3-level branching                                |
+| `08_tax_preparer.rb`       | Full tax preparation wizard | 18+   | All data types, deep branching                             |
+| `09_tax_preparer_llm.rb`   | **LLM-assisted tax intake** | 9     | `clarify` + `summarize`, `skip_if not_empty`, auto-prefill |
+| `10_real_tax_preparer.rb`  | Realistic tax preparer flow | 20+   | Full intake variant                                        |
 
 Run any example:
 
 ```bash
-inquirex run examples/01_hello_world.rb
-inquirex run examples/08_tax_preparer.rb
-inquirex run examples/09_tax_preparer_llm.rb
+inquirex-tty run examples/01_hello_world.rb
+inquirex-tty run examples/08_tax_preparer.rb
+inquirex-tty run examples/09_tax_preparer_llm.rb
 ```
 
 Validate all examples:
 
 ```bash
-for f in examples/*.rb; do inquirex validate "$f"; done
+for f in examples/*.rb; do inquirex-tty validate "$f"; done
 ```
 
 ## Architecture
 
 ```
 inquirex-tty/
-├── exe/inquirex                    # CLI entry point (dry-cli)
+├── exe/inquirex-tty                # CLI entry point (dry-cli)
 └── lib/inquirex/tty/
     ├── commands/
     │   ├── run.rb                  # Interactive flow execution

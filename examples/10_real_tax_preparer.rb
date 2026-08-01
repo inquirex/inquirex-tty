@@ -64,21 +64,15 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
 
   extract :summary do
     from :describe
-    prompt "Extract the filer's tax intake details for scoping: filing_status, " \
-           "number of dependents, income_types, state_filing (which states they " \
-           "file in), residency_status, prior_return_available, and any " \
-           "business_entities they own or partner in."
-    schema filing_status:     { type: :enum, values: %w[single married_filing_jointly married_filing_separately
-                                                        head_of_household widowed] },
-      dependents:             { type: :enum, values: %w[0 1 2 3 4+] },
-      income_types:           { type: :multi_enum, values: %w[W2 1099_nec 1099_k business investment crypto rental
-                                                              retirement social_sec gambling foreign home_sale
-                                                              inheritance none] },
-      state_filing:           { type: :multi_enum, values: US_STATES },
-      residency_status:       { type: :enum, values: %w[us_person resident non_resident dual_status] },
-      prior_return_available: { type: :enum, values: %w[yes_last_year yes_older no first_time] },
-      business_entities:      { type: :multi_enum, values: %w[sole_prop single_llc multi_llc s_corp c_corp
-                                                              partnership trust nonprofit] }
+    prompt "Extract the filer's tax intake details for scoping: filing status, " \
+           "dependents, income types, states filed in, residency status, prior " \
+           "return availability, and any business entities owned."
+
+    # Schema derived from the referenced questions: each symbol resolves to
+    # that ask step's type, and enum/multi_enum option values are folded in
+    # automatically — no duplication of the option lists here.
+    schema :filing_status, :dependents, :income_types, :state_filing,
+           :residency_status, :prior_return_available, :business_entities
 
     model :claude_sonnet
     transition to: :residency_status
