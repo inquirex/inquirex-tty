@@ -6,6 +6,10 @@ Terminal adapter for the [Inquirex](https://github.com/inquirex/inquirex) questi
 
 Ships as a CLI (`inquirex-tty`) with commands to run flows interactively, validate definitions, and export Mermaid diagrams.
 
+## Inquirex CLI Shorthand Alias
+
+This gem also installs a shorter command `inqt` which you can run in place of `inquirex-tty`.
+
 ## Installation
 
 ```ruby
@@ -47,7 +51,7 @@ end
 Run it:
 
 ```bash
-inquirex-tty run my_flow.rb
+inqt run my_flow.rb
 ```
 
 The CLI walks the user through each step, selecting the appropriate TTY widget for each data type, and prints collected answers as JSON when the flow completes.
@@ -60,10 +64,10 @@ Execute a flow interactively. Each step is rendered with the appropriate tty-pro
 
 ```bash
 # run it and then dump answers as json to stdout
-inquirex-tty run examples/08_tax_preparer.rb
+inqt run examples/08_tax_preparer.rb
 
 # run it and save the anawers to a json file
-inquirex-tty run examples/08_tax_preparer.rb \
+inqt run examples/08_tax_preparer.rb \
   --output answers.json
 ```
 
@@ -107,7 +111,7 @@ Check that a flow definition is well-formed without running it. Validates:
 - All steps are reachable from the start step (detects orphans)
 
 ```bash
-inquirex-tty validate examples/08_tax_preparer.rb
+inqt validate examples/08_tax_preparer.rb
 ```
 
 ### `inquirex-tty graph <flow_file>`
@@ -115,11 +119,11 @@ inquirex-tty validate examples/08_tax_preparer.rb
 Export the flow as a [Mermaid](https://mermaid.js.org/) diagram source, an image, or both.
 
 ```bash
-inquirex-tty graph examples/08_tax_preparer.rb                                       # Mermaid source to stdout
-inquirex-tty graph examples/08_tax_preparer.rb --output flow.mmd                     # write source to a file
-inquirex-tty graph examples/08_tax_preparer.rb --format image -o flow.svg            # SVG via mmdc
-inquirex-tty graph examples/08_tax_preparer.rb --format both --output ~/Desktop      # source + image into a directory
-inquirex-tty graph examples/08_tax_preparer.rb --format image --open                 # SVG + open in viewer
+inqt graph examples/08_tax_preparer.rb                                       # Mermaid source to stdout
+inqt graph examples/08_tax_preparer.rb --output flow.mmd                     # write source to a file
+inqt graph examples/08_tax_preparer.rb --format image -o flow.svg            # SVG via mmdc
+inqt graph examples/08_tax_preparer.rb --format both --output ~/Desktop      # source + image into a directory
+inqt graph examples/08_tax_preparer.rb --format image --open                 # SVG + open in viewer
 ```
 
 Options:
@@ -137,12 +141,12 @@ Image generation requires [mermaid-cli](https://github.com/mermaid-js/mermaid-cl
 Export the flow definition as JSON or YAML. Useful for serving flows to frontend adapters (the JS widget, Rails API, etc.) or for inspecting the wire format.
 
 ```bash
-inquirex-tty export examples/08_tax_preparer.rb                          # pretty JSON to stdout
-inquirex-tty export examples/08_tax_preparer.rb -f yml                   # YAML to stdout
-inquirex-tty export examples/08_tax_preparer.rb -o .                     # write 08_tax_preparer.json to cwd
-inquirex-tty export examples/08_tax_preparer.rb -f yml -o ~/flows        # write 08_tax_preparer.yml to ~/flows
-inquirex-tty export examples/08_tax_preparer.rb -o out.json              # write to named file
-inquirex-tty export examples/08_tax_preparer.rb -f yml -o out            # appends .yml → out.yml
+inqt export examples/08_tax_preparer.rb                          # pretty JSON to stdout
+inqt export examples/08_tax_preparer.rb -f yml                   # YAML to stdout
+inqt export examples/08_tax_preparer.rb -o .                     # write 08_tax_preparer.json to cwd
+inqt export examples/08_tax_preparer.rb -f yml -o ~/flows        # write 08_tax_preparer.yml to ~/flows
+inqt export examples/08_tax_preparer.rb -o out.json              # write to named file
+inqt export examples/08_tax_preparer.rb -f yml -o out            # appends .yml → out.yml
 ```
 
 Options:
@@ -163,7 +167,7 @@ Output path rules:
 Print version information for the TTY adapter and its dependencies.
 
 ```bash
-inquirex-tty version
+inqt version
 ```
 
 ## Example Session
@@ -351,7 +355,7 @@ Run it:
 # Put your key in any .env up the tree — OPENAI_API_KEY or ANTHROPIC_API_KEY
 echo 'OPENAI_API_KEY=sk-…' >> ../.env
 
-inquirex-tty run examples/09_tax_preparer_llm.rb
+inqt run examples/09_tax_preparer_llm.rb
 ```
 
 A typical session (input shortened):
@@ -395,9 +399,9 @@ The gem ships with 10 examples of increasing complexity:
 Run any example:
 
 ```bash
-inquirex-tty run examples/01_hello_world.rb
-inquirex-tty run examples/08_tax_preparer.rb
-inquirex-tty run examples/09_tax_preparer_llm.rb
+inqt run examples/01_hello_world.rb
+inqt run examples/08_tax_preparer.rb
+inqt run examples/09_tax_preparer_llm.rb
 ```
 
 Validate all examples:
