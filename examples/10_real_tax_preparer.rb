@@ -71,8 +71,13 @@ Inquirex.define id: "tax-preparer-2025", version: "2.0.0" do
     # Schema derived from the referenced questions: each symbol resolves to
     # that ask step's type, and enum/multi_enum option values are folded in
     # automatically — no duplication of the option lists here.
-    schema :filing_status, :dependents, :income_types, :state_filing,
-           :residency_status, :prior_return_available, :business_entities
+    schema :filing_status,
+      :dependents,
+      :income_types,
+      :state_filing,
+      :residency_status,
+      :prior_return_available,
+      :business_entities
 
     model :claude_sonnet
     transition to: :residency_status

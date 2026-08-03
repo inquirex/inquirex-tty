@@ -1,6 +1,6 @@
 Inquirex.define do
   meta title: "Coolness Questionnaire",
-       subtitle: "Let's figure out how cool you are :)"
+    subtitle: "Let's figure out how cool you are :)"
 
   start :welcome
 
@@ -25,10 +25,10 @@ Inquirex.define do
     type :enum
     question "How many times have you been to Burning Man?"
     options ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"]
-    transition to: :awesome, if_rule: greater_than(20)
-    transition to: :good, if_rule: greater_than(10)
-    transition to: :decent, if_rule: greater_than(1)
-    transition to: :lame, if_rule: less_than(1)
+    transition to: :awesome, if_rule: greater_than(:burning_man, 20)
+    transition to: :good, if_rule: greater_than(:burning_man, 10)
+    transition to: :decent, if_rule: greater_than(:burning_man, 1)
+    transition to: :lame, if_rule: less_than(:burning_man, 1)
     widget target: :tty, type: :select
     widget target: :desktop, type: :radio_group, columns: 5
     widget target: :mobile, type: :dropdown

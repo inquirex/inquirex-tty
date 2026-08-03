@@ -33,15 +33,15 @@ format:
 
 # Run a flow interactively
 run flow_file:
-    {{ rbenv }} exe/inquirex run {{flow_file}}
+    {{ rbenv }} exe/inqt run {{flow_file}}
 
 # Validate a flow definition
 validate flow_file:
-    {{ rbenv }} exe/inquirex validate {{flow_file}}
+    {{ rbenv }} exe/inqt validate {{flow_file}}
 
 # Export a flow as a Mermaid diagram (stdout)
 graph flow_file:
-    {{ rbenv }} exe/inquirex graph {{flow_file}}
+    {{ rbenv }} exe/inqt graph {{flow_file}}
 
 # Validate all examples
 examples:
@@ -49,7 +49,7 @@ examples:
     set -e
     for f in examples/*.rb; do
         echo "=== $f ==="
-        {{ rbenv }} exe/inquirex validate "$f"
+        {{ rbenv }} exe/inqt validate "$f"
         echo ""
     done
 
