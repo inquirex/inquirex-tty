@@ -117,3 +117,16 @@ Style/StderrPuts:
 Style/OpenStructUse:
   Exclude:
     - "lib/inquirex/tty/commands/run.rb"
+
+# Examples are standalone scripts run by name, not files required through a
+# constant, so their filenames are documentation rather than a load path.
+# Hyphens are the family convention for the topical ones — inquirex-llm has
+# llm-intake.rb and tax-preparation-estimator.rb — while the numbered tour
+# (01_hello_world.rb ...) stays snake_case.
+#
+# Not cosmetic any more: `inquirex versions-bump` runs `just check-all` in
+# every package and fails the whole family bump if one package fails, so a
+# naming opinion about an example would block every release.
+Naming/FileName:
+  Exclude:
+    - "examples/**/*"
