@@ -5,10 +5,12 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in inquirex-tty.gemspec
 gemspec
 
+INQUIREX_VERSION =  "~> 0.8"
+
 gem "colored2"
 
-gem "inquirex",     "~> 0.6"
-gem "inquirex-llm", "~> 0.6"
+gem "inquirex",     INQUIREX_VERSION
+gem "inquirex-llm", INQUIREX_VERSION
 
 gem "irb"
 gem "rake"

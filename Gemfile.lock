@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    inquirex-tty (0.6.0)
+    inquirex-tty (0.9.2)
       dry-cli (~> 1.0)
       inquirex (~> 0.6)
       inquirex-llm (~> 0.6)
@@ -21,10 +21,10 @@ GEM
     diff-lcs (1.6.2)
     docile (1.4.1)
     dry-cli (1.4.1)
-    erb (6.0.5)
-    inquirex (0.6.0)
+    erb (6.0.6)
+    inquirex (0.8.0)
       ostruct (~> 0.6)
-    inquirex-llm (0.6.0)
+    inquirex-llm (0.8.0)
       inquirex (~> 0.6)
     io-console (0.8.2)
     irb (1.18.0)
@@ -32,7 +32,7 @@ GEM
       prism (>= 1.3.0)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
-    json (2.21.1)
+    json (2.21.2)
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     logger (1.7.0)
@@ -50,7 +50,7 @@ GEM
     racc (1.8.1)
     rainbow (3.1.1)
     rake (13.4.2)
-    rbs (4.0.3)
+    rbs (4.1.2)
       logger
       prism (>= 1.6.0)
       tsort
@@ -136,8 +136,8 @@ PLATFORMS
 DEPENDENCIES
   colored2
   coverage-badge
-  inquirex (~> 0.6)
-  inquirex-llm (~> 0.6)
+  inquirex (~> 0.8)
+  inquirex-llm (~> 0.8)
   inquirex-tty!
   irb
   rake
@@ -155,13 +155,13 @@ CHECKSUMS
   diff-lcs (1.6.2) sha256=9ae0d2cba7d4df3075fe8cd8602a8604993efc0dfa934cff568969efb1909962
   docile (1.4.1) sha256=96159be799bfa73cdb721b840e9802126e4e03dfc26863db73647204c727f21e
   dry-cli (1.4.1) sha256=b8015bb76c708aa8705a36faf694973e75eeeffca39b89c8e172dc6f66a7d874
-  erb (6.0.5) sha256=858e63488cb796c9daba8b6e9ff4b3879c395022049be9a66a8e00980e612eac
-  inquirex (0.6.0) sha256=fe38aa0894c2232cc495a8702ce350d10d92fc470ea5988dc802224a57a24a79
-  inquirex-llm (0.6.0) sha256=93c16b724c344302b14bb9cb94e36f24c6f45104413f9f9b5b03e6b558a3b28f
-  inquirex-tty (0.6.0)
+  erb (6.0.6) sha256=a9b24986700f5bf127c4f297c5403c3ca41b83b0a316c0cd09a096b56e644ae5
+  inquirex (0.8.0) sha256=d2e0d895a83daa56c8884fed969380710d8b9ce881ca05649ffab3c94869797d
+  inquirex-llm (0.8.0) sha256=42e2312d4cb5c2151a545e0fecb626299925fb1f49245a4962dc596f6a639df6
+  inquirex-tty (0.9.2)
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
-  json (2.21.1) sha256=13a43df75d95641443f5702dff350f237164a9d811ff0f2c2800d4d980220583
+  json (2.21.2) sha256=1f1d3b7cf2b3ba1a69beca0bb6db13d5438b80bff3cd54cdaaa620b9b07c1c6a
   language_server-protocol (3.17.0.6) sha256=5ef2c0c138f8267e1bc631d3328347d354f96724b0af22f2c79516120443b7f0
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
@@ -175,7 +175,7 @@ CHECKSUMS
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rainbow (3.1.1) sha256=039491aa3a89f42efa1d6dec2fc4e62ede96eb6acd95e52f1ad581182b79bc6a
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
-  rbs (4.0.3) sha256=5a7bf70e2628549d9a1f44eae447b2cfe55968a9c60cfff52693a4bdcc020e14
+  rbs (4.1.2) sha256=050eb1d8b508f1233bed929c0f2c7052302f7adf295230d9cb314e9024078f48
   rdoc (8.0.0) sha256=03bf8c08a9639658855a0cfd77c0abca8325c227693f7f33f82957811348c469
   regexp_parser (2.12.0) sha256=35a916a1d63190ab5c9009457136ae5f3c0c7512d60291d0d1378ba18ce08ebb
   reline (0.6.3) sha256=1198b04973565b36ec0f11542ab3f5cfeeec34823f4e54cebde90968092b1835
