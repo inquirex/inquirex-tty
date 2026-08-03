@@ -64,21 +64,27 @@ module Inquirex
 
       # Renders a node. Returns the collected answer, or +nil+ for display verbs.
       #
-      # @example Collect an answer for the current step
+      # @example Collect an answer for the current step, pre-checking LLM suggestions
       #   renderer = Inquirex::TTY::Renderer.new
       #   step   = engine.current_step
-      #   answer = renderer.render(step) # nil for display verbs
+      #   answer = renderer.render(step, suggestion: engine.suggestion_for(engine.current_step_id))
       #   engine.answer(answer) unless step.display?
       #
       # @param node [Inquirex::Node]
+      # @param suggestion [Array, nil] prefill suggestion for the step (option
+      #   form values, e.g. from Engine#suggestion_for) — multi-select prompts
+      #   render these choices pre-checked so the user confirms or extends
       # @return [Object, nil]
-      def render(node)
+      def render(node, suggestion: nil)
+        @current_suggestion = suggestion
         if node.display?
           render_display_verb(node)
           nil
         else
           render_collecting(node)
         end
+      ensure
+        @current_suggestion = nil
       end
 
       private
@@ -202,9 +208,26 @@ module Inquirex
         prompt.select(node.question, select_options(node))
       end
 
-      # Multiple-choice list (space to toggle, min 1 selection).
+      # Multiple-choice list (space to toggle, min 1 selection). Suggested
+      # choices (an LLM extraction the user should confirm) render pre-checked.
       def render_multi_select(node)
-        prompt.multi_select(node.question, select_options(node), min: 1)
+        prompt.multi_select(node.question, select_options(node), min: 1, **multi_select_defaults(node))
+      end
+
+      # tty-prompt pre-checks multi_select choices via default: choice NAMES —
+      # the labels, not the return values. Suggestions arrive as option form
+      # values (that is the wire contract), so translate value → label here;
+      # a value with no label entry falls back to itself.
+      #
+      # @param node [Inquirex::Node]
+      # @return [Hash] {} or { default: Array<String> }
+      def multi_select_defaults(node)
+        suggested = Array(@current_suggestion)
+        return {} if suggested.empty?
+
+        labels = node.respond_to?(:option_labels) ? node.option_labels : nil
+        names = suggested.map { |value| labels&.fetch(value.to_s, nil) || value.to_s }
+        { default: names }
       end
 
       # Numbered choice menu.

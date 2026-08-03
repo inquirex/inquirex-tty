@@ -179,6 +179,61 @@ RSpec.describe Inquirex::TTY::Renderer do
       end
     end
 
+    # Regression: LLM-extracted multi-select values arrive as suggestions
+    # (option form values). The prompt must render them pre-checked — via
+    # tty-prompt's default:, which takes choice NAMES (labels) — or the
+    # extraction silently vanishes and the user re-selects from scratch.
+    context "with a :multi_enum ask node and a prefill suggestion" do
+      let(:node) do
+        make_node(
+          verb:    :ask,
+          type:    :multi_enum,
+          options: { "W2" => "W-2 wages", "crypto" => "Cryptocurrency", "rental" => "Rental property" }
+        )
+      end
+
+      before do
+        allow(prompt).to receive(:multi_select)
+          .with(
+            "Question?",
+            { "W-2 wages" => "W2", "Cryptocurrency" => "crypto", "Rental property" => "rental" },
+            min:     1,
+            default: ["W-2 wages", "Cryptocurrency"]
+          )
+          .and_return(%w[W2 crypto])
+      end
+
+      it "pre-checks the suggested choices by label" do
+        expect(renderer.render(node, suggestion: %w[W2 crypto])).to eq(%w[W2 crypto])
+      end
+    end
+
+    context "with a :multi_enum ask node, label-less options, and a suggestion" do
+      let(:node) { make_node(verb: :ask, type: :multi_enum, options: %w[X Y Z]) }
+
+      before do
+        allow(prompt).to receive(:multi_select)
+          .with("Question?", %w[X Y Z], min: 1, default: ["Y"])
+          .and_return(%w[Y])
+      end
+
+      it "falls back to the raw values as default names" do
+        expect(renderer.render(node, suggestion: %w[Y])).to eq(%w[Y])
+      end
+    end
+
+    context "with a suggestion on a single-select node" do
+      let(:node) { make_node(verb: :ask, type: :enum, options: %w[A B]) }
+
+      before do
+        allow(prompt).to receive(:select).with("Question?", %w[A B]).and_return("A")
+      end
+
+      it "ignores the suggestion (single-select prefills skip instead)" do
+        expect(renderer.render(node, suggestion: %w[B])).to eq("A")
+      end
+    end
+
     context "with a :mask widget hint" do
       let(:hint) { Inquirex::WidgetHint.new(type: :mask, options: {}) }
       let(:node) { make_node(verb: :ask, type: :string, hints: { tty: hint }) }
