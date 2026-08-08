@@ -5,7 +5,7 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in inquirex-tty.gemspec
 gemspec
 
-INQUIREX_VERSION =  "~> 0.8"
+INQUIREX_VERSION =  "~> 0.9.5"
 
 gem "colored2"
 

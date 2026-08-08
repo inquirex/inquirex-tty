@@ -190,12 +190,51 @@ module Inquirex
       # Integer or float depending on the node's data type.
       def render_number_input(node)
         convert = node.type == :integer ? :int : :float
-        prompt.ask(node.question, convert:)
+        ask_bounded(node, convert:)
       end
 
       # Float for currency types.
       def render_currency_input(node)
-        prompt.ask(node.question, convert: :float)
+        ask_bounded(node, convert: :float)
+      end
+
+      # Asks for a number, enforcing the node's declared bounds.
+      #
+      # tty-prompt's `in:` re-asks until the answer falls inside the range,
+      # which is the terminal's equivalent of the widget's stepper bounds — the
+      # user is corrected before the value is ever stored, rather than having it
+      # silently clamped afterwards. An unbounded node keeps the plain ask so
+      # the prompt text is unchanged for the overwhelmingly common case.
+      #
+      # @param node [Inquirex::Node] the step being rendered
+      # @param convert [Symbol] :int or :float
+      # @return [Numeric, nil]
+      def ask_bounded(node, convert:)
+        return prompt.ask(node.question, convert:) unless node.bounded?
+
+        prompt.ask(node.question, convert:, in: bounds_range(node)) do |q|
+          q.messages[:range?] = "Enter a value #{describe_bounds(node)}."
+        end
+      end
+
+      # The node's bounds as a Range tty-prompt understands. An open end is
+      # spelled with infinity rather than omitted, since `in:` wants a Range.
+      #
+      # @param node [Inquirex::Node]
+      # @return [Range]
+      def bounds_range(node)
+        low  = node.min || -Float::INFINITY
+        high = node.max || Float::INFINITY
+        low..high
+      end
+
+      # @param node [Inquirex::Node]
+      # @return [String] human phrasing of whichever bounds exist
+      def describe_bounds(node)
+        return "between #{node.min} and #{node.max}" if node.min && node.max
+        return "of #{node.min} or more" if node.min
+
+        "of #{node.max} or less"
       end
 
       # Boolean — tty-prompt yes?.
