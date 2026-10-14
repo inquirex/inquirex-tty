@@ -283,6 +283,23 @@ RSpec.describe Inquirex::TTY::Commands::Run do
       stub_const("ENV", ENV.to_h.merge("OPENAI_API_KEY" => "sk-test"))
       expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::OpenAIAdapter)
     end
+
+    it "sees a key that arrived after the configuration was first read, as one from .env does" do
+      Inquirex::LLM.configuration
+      ENV["ANTHROPIC_API_KEY"] = "sk-from-dotenv"
+      expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::AnthropicAdapter)
+    end
+
+    it "rejects an unknown INQUIREX_LLM_ADAPTER, naming the variable" do
+      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "jev"))
+      expect { command.send(:build_llm_adapter) }
+        .to raise_error(Inquirex::LLM::Errors::ConfigurationError, /INQUIREX_LLM_ADAPTER/)
+    end
+
+    it "builds the adapter with the model inquirex-llm is configured with" do
+      stub_const("ENV", ENV.to_h.merge("ANTHROPIC_API_KEY" => "sk-test", "INQUIREX_LLM_ANTHROPIC_MODEL" => "claude-opus-5-5"))
+      expect(command.send(:build_llm_adapter).instance_variable_get(:@default_model)).to eq("claude-opus-5-5")
+    end
   end
 
   describe "#adapter_label (private)" do

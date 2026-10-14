@@ -314,6 +314,8 @@ When a flow contains [inquirex-llm](../inquirex-llm) verbs (`clarify`, `describe
 | `OPENAI_API_KEY` is set          | `Inquirex::LLM::OpenAIAdapter`      |
 | nothing set                      | `Inquirex::LLM::NullAdapter` (demo) |
 
+The selection is `Inquirex::LLM.adapter`, from inquirex-llm's configuration, so the default models and limits follow its environment variables too (`INQUIREX_LLM_ANTHROPIC_MODEL`, `INQUIREX_LLM_OPENAI_MODEL`, `INQUIREX_LLM_MAX_TOKENS` and the rest; see inquirex-llm's README, "Configuration"). An unknown `INQUIREX_LLM_ADAPTER` value now stops the run with an error naming the variable, instead of falling through to auto-detection.
+
 ### End-to-end example
 
 `examples/09_tax_preparer_llm.rb` is a complete LLM-assisted tax intake. The user types one free-text description of their tax situation; the LLM extracts `filing_status`, `dependents`, `income_types`, `state_filing`; the wizard only asks for whatever the LLM couldn't determine, then runs a final `summarize` for a complexity / fee-estimate write-up.

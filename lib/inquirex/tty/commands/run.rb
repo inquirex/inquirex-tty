@@ -147,31 +147,22 @@ module Inquirex
           raise
         end
 
-        # Adapter preference order (first match wins):
+        # The adapter inquirex-llm's configuration selects (first match wins):
         #   INQUIREX_LLM_ADAPTER=null         → NullAdapter (forced offline)
         #   INQUIREX_LLM_ADAPTER=anthropic    → AnthropicAdapter (fails if no key)
         #   INQUIREX_LLM_ADAPTER=openai       → OpenAIAdapter (fails if no key)
         #   ANTHROPIC_API_KEY present         → AnthropicAdapter
         #   OPENAI_API_KEY present            → OpenAIAdapter
         #   otherwise                         → NullAdapter
+        #
+        # The configuration reads ENV once, and load_dotenv! has just added
+        # to it, so it is rebuilt first; a key that lives only in .env would
+        # otherwise be missed.
+        #
+        # @return [Inquirex::LLM::Adapter]
         def build_llm_adapter
-          forced = ENV["INQUIREX_LLM_ADAPTER"].to_s.downcase
-          return Inquirex::LLM::NullAdapter.new      if forced == "null"
-          return Inquirex::LLM::AnthropicAdapter.new if forced == "anthropic"
-          return Inquirex::LLM::OpenAIAdapter.new    if forced == "openai"
-
-          if env_key?("ANTHROPIC_API_KEY") && defined?(Inquirex::LLM::AnthropicAdapter)
-            Inquirex::LLM::AnthropicAdapter.new
-          elsif env_key?("OPENAI_API_KEY") && defined?(Inquirex::LLM::OpenAIAdapter)
-            Inquirex::LLM::OpenAIAdapter.new
-          else
-            Inquirex::LLM::NullAdapter.new
-          end
-        end
-
-        def env_key?(name)
-          v = ENV.fetch(name, nil)
-          !v.nil? && !v.empty?
+          Inquirex::LLM.reset_configuration!
+          Inquirex::LLM.adapter
         end
 
         def adapter_label(adapter)
