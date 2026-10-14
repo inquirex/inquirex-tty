@@ -57,8 +57,7 @@ module Inquirex
               renderer.render(step)
               engine.advance
             else
-              suggestion = engine.suggestion_for(engine.current_step_id)
-              engine.answer(renderer.render(step, suggestion:))
+              renderer.collect(engine)
             end
           end
 
