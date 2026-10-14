@@ -49,7 +49,9 @@ module Inquirex
 
           until engine.finished?
             step = engine.current_step
-            next_step(engine.current_step_id, engine.history.length + 1)
+            # history already ends with the current step, so its length is
+            # the step's number; adding one printed "Step 2" for the first.
+            next_step(engine.current_step_id, engine.history.length)
 
             if step.respond_to?(:llm_verb?) && step.llm_verb?
               run_llm_step(engine, step, adapter, renderer)
