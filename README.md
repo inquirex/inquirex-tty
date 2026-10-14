@@ -63,19 +63,49 @@ The CLI walks the user through each step, selecting the appropriate TTY widget f
 Execute a flow interactively. Each step is rendered with the appropriate tty-prompt widget based on the node's data type and widget hints.
 
 ```bash
-# run it and then dump answers as json to stdout
+# run it; the answers are printed as JSON on stdout
 inqt run examples/08_tax_preparer.rb
 
-# run it and save the anawers to a json file
-inqt run examples/08_tax_preparer.rb \
-  --output answers.json
+# the prompts are drawn on stderr, so stdout can be redirected
+inqt run examples/08_tax_preparer.rb > answers.json
+
+# or save the answers to a file
+inqt run examples/08_tax_preparer.rb --output answers.json
 ```
 
 Options:
 
-| Flag             | Description                                    |
-| ---------------- | ---------------------------------------------- |
-| `--output`, `-o` | Write JSON results to a file instead of stderr |
+| Flag             | Description                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| `--output`, `-o` | Write the JSON results to this file; `-o -` (or no `-o`) writes them to stdout     |
+| `--answers FILE` | Run headless from preset answers, `{step_id: value}` in `.json`, `.yml` or `.yaml` |
+| `--yes`, `-y`    | Run headless, answering every step the answers file leaves out with its default    |
+
+**Results channel.** The results JSON goes to stdout, and only the results: every prompt, box and progress line of an interactive run is drawn on stderr. `-o FILE` writes the results to the file instead and leaves stdout empty. Until 0.12.0 the results went to stderr.
+
+**Going back.** Press **Ctrl-B** at any question to return to the previous one, with your earlier answer filled in as the default. The tip line under each question after the first names the key. Display steps and LLM steps in between are stepped over.
+
+**Headless runs.** With `--answers` or `--yes` the flow runs without a terminal: no prompt is drawn, standard input is never read, and no LLM adapter is called, which makes it the way to run a flow in tests and CI.
+
+```yaml
+# answers.yml
+filing_status: single
+income_types: [W2]
+state_filing: [California]
+foreign_accounts: "no"
+deduction_types: [None]
+client_name: Alan Turing
+client_email: alan.turing@manchester.edu
+```
+
+```bash
+# dependents is left out: --yes answers it with its default, 0
+inqt run examples/08_tax_preparer.rb --answers answers.yml --yes > results.json
+```
+
+- Answers are passed to the engine as written: a multi-select takes a list of option values, not their labels.
+- A step the file leaves out is skipped when it is optional. With `--yes` a step with a default takes it, and an LLM step with none is answered with `null`.
+- A required step with no answer stops the run: it exits 1 and names the step on stderr.
 
 On completion, outputs a JSON summary:
 
@@ -94,8 +124,8 @@ On completion, outputs a JSON summary:
     "state_filing": ["California"],
     "foreign_accounts": "no",
     "deduction_types": ["Medical"],
-    "client_name": "Konstantin Gredeskoul",
-    "client_email": "kigster@gmail.com"
+    "client_name": "Alan Turing",
+    "client_email": "alan.turing@manchester.edu"
   },
   "steps_completed": 10,
   "completed_at": "2026-04-13T23:51:33-07:00"
@@ -214,10 +244,10 @@ Step 8: deduction_types
 Which additional deductions apply to you? Medical
 Step 9: client_name
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Your name, please: Konstantin Gredeskoul
+Your name, please: Alan Turing
 Step 10: client_email
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Your email address: kigster@gmail.com
+Your email address: alan.turing@manchester.edu
 Step 11: thanks
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -422,7 +452,9 @@ inquirex-tty/
     │   ├── graph.rb                # Mermaid diagram export
     │   ├── export.rb               # JSON / YAML serialization
     │   └── version.rb              # Print version info
-    ├── renderer.rb                 # Node → tty-prompt widget dispatcher
+    ├── renderer.rb                 # Node → tty-prompt widget dispatcher, Ctrl-B back
+    ├── back_key.rb                 # The back key and the exception that unwinds a prompt
+    ├── answers_file.rb             # --answers: JSON or YAML preset answers
     ├── flow_loader.rb              # Load .rb flow definitions
     ├── output_path.rb              # Shared -o/--output path resolution
     ├── ui_helper.rb                # TTY::Box/Pastel/Screen helpers
@@ -432,6 +464,8 @@ inquirex-tty/
 ### Renderer
 
 `Inquirex::TTY::Renderer` is the core class that maps nodes to tty-prompt calls. It reads the `:tty` widget hint from each node (via `WidgetRegistry` defaults or explicit DSL hints) and dispatches to the matching `render_*` method.
+
+`Renderer#collect(engine)` asks the engine's current step and answers it, or, when the user presses Ctrl-B, calls `Engine#back` and returns `:back`; the run loop then asks the previous question again with `Engine#previous_answer` as its default. Ctrl-B raises `Inquirex::TTY::BackKey::Pressed` from a handler on tty-reader's `:keyctrl_b` event, which unwinds whichever tty-prompt widget is open.
 
 The `TTY::Prompt` instance is injectable for testing:
 
@@ -449,6 +483,8 @@ Loads a `.rb` file and evaluates it to produce an `Inquirex::Definition`. The fi
 A mixin module providing styled output helpers (`box`, `info`, `success`, `error`, `warning`, `sep`, `next_step`) built on TTY::Box, Pastel, and TTY::Screen. Included automatically in all CLI commands and the Renderer.
 
 ## Development
+
+Ruby 4.0 or later. `.ruby-version` pins 4.1.0-preview1, where the suite passes with Bundler 4.0.16 (Bundler 4.0.10 fails on 4.1 with `uninitialized constant Pathname::SEPARATOR_PAT` before any spec runs). CI runs on the CircleCI image for Ruby 4.0.6.
 
 ```bash
 bin/setup                           # install dependencies
