@@ -1,16 +1,23 @@
 # Changelog
 
-## 0.12.0 (unreleased)
+## 0.12.1 (2026-10-15)
+
+- **Backspace goes back.** On an empty answer (anywhere in a list), Backspace returns to the previous question, like Ctrl-B.
+- **Ctrl-S skips an optional question** (`Engine#skip`) and is refused on a required one.
+- **`?` shows the keymap** on an empty answer, and a hint line above each question lists the keys.
+- **Ctrl-C aborts cleanly** with exit status 130 and a one-line message, instead of a stack trace.
+- **Locked at inquirex 0.12.1**; the `openrouter` and `jev` adapters it adds are selectable through `INQUIREX_LLM_ADAPTER`. `irb` is no longer in the Gemfile: through rdoc it pulled in `erb`, a default gem that a local bundle locks with an empty checksum and a frozen CI install then rejects.
+
+## 0.12.0 (2026-10-15)
 
 Hand-written until `github_changelog_generator` regenerates this file at release. The family-wide notes are in inquirex's `INQUIREX_VERSION_LOG.md`.
 
 - **BREAKING: results go to stdout.** `run` printed its JSON results on stderr; it now prints them on stdout, and draws every prompt, box and progress line on stderr, so `inqt run flow.rb > answers.json` captures a clean document. A caller that read the results from stderr must read stdout. `-o FILE` still writes a file (and now leaves stdout empty); `-o -` names stdout.
-- **Going back, skipping and a keymap.** At any question after the first, Backspace on an empty answer (or anywhere in a list) or Ctrl-B returns to the previous question with the earlier answer as its default (`Engine#back`, `#can_back?`, `#previous_answer` from inquirex 0.12). Ctrl-S skips an optional question (`Engine#skip`) and is refused on a required one. `?` on an empty answer shows the keymap. A hint line above each question lists the keys. Display and LLM steps in between are stepped over. Cmd-Backspace was considered and rejected: terminals do not send it to a program unless the user maps it by hand.
-- **Ctrl-C aborts cleanly** with exit status 130 and a one-line message, instead of a stack trace.
+- **Ctrl-B goes back.** At any question after the first, Ctrl-B returns to the previous question with the earlier answer as its default (`Engine#back`, `#can_back?`, `#previous_answer` from inquirex 0.12.0). A tip line under the question names the key. Display and LLM steps in between are stepped over. Cmd-Backspace was considered and rejected: terminals do not send it to a program unless the user maps it by hand.
 - **Headless runs: `run --answers FILE` and `--yes`.** Preset answers (`{step_id: value}`, JSON or YAML by extension) are fed to the engine through `Inquirex::Headless`; no prompt or renderer is built, standard input is never read, no LLM adapter is called, and the public-IP probe is skipped. `--yes` answers the remaining steps with their defaults. A required step left without an answer exits 1 and names the step on stderr.
 - **Adapter selection comes from inquirex-llm.** `run` builds its LLM adapter with `Inquirex::LLM.adapter`, re-reading inquirex-llm's configuration after `.env` loads. The documented `INQUIREX_LLM_ADAPTER` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` order is unchanged, and the default models and limits now follow inquirex-llm's `INQUIREX_LLM_*` variables. An unknown `INQUIREX_LLM_ADAPTER` value now raises an error naming the variable instead of falling through to auto-detection.
 - Step numbers in the progress line start at 1 again (the first step printed as "Step 2").
-- **Requires `inquirex ~> 0.12` and `inquirex-llm ~> 0.12`** (locked at 0.12.1; the `openrouter` and `jev` adapters it adds are selectable through `INQUIREX_LLM_ADAPTER`). `irb` is no longer in the Gemfile: through rdoc it pulled in `erb`, a default gem that a local bundle locks with an empty checksum and a frozen CI install then rejects. 0.10.0 still required `~> 0.9.5` of both, so it could not be installed beside the 0.10.0 core.
+- **Requires `inquirex ~> 0.12` and `inquirex-llm ~> 0.12`.** 0.10.0 still required `~> 0.9.5` of both, so it could not be installed beside the 0.10.0 core.
 - README samples use a fictional person (Alan Turing, `alan.turing@manchester.edu`), as does `examples/10_answers.json`.
 - Ruby 4.1.0-preview1: the suite passes with Bundler 4.0.16; Gemfile.lock moves off Bundler 4.0.10, which fails on 4.1 with `uninitialized constant Pathname::SEPARATOR_PAT`. `spec/inquirex/tty/gemspec_spec.rb` fails when `lib/` requires a library that neither ships with the running Ruby nor is a declared runtime dependency.
 - CircleCI config copied from inquirex core; `.ruby-version` pins 4.1.0-preview1.
