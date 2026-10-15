@@ -23,6 +23,11 @@ module Inquirex
     #   (fallback)     → prompt.ask
     #
     # Header display verb uses TTY::Font for large ASCII-art section titles.
+    #
+    # {#collect} drives one collecting step against an engine and binds the
+    # back key ({BackKey}): pressed in any open prompt, it steps the engine
+    # back and the caller's loop re-asks the previous question with its
+    # answer as the default.
     class Renderer
       include UIHelper
 
@@ -62,6 +67,39 @@ module Inquirex
         sep(:magenta, "─")
       end
 
+      # Asks the engine's current collecting step and answers it. When the
+      # user presses the back key instead, the engine steps back and nothing
+      # is answered; the caller's loop then asks the previous question again,
+      # pre-filled with the answer it had.
+      #
+      # The tip line naming the key appears only when there is somewhere to
+      # go back to, and the key is live only then: on the first question it
+      # does nothing.
+      #
+      # @example Drive a flow's collecting steps
+      #   until engine.finished?
+      #     engine.current_step.display? ? (renderer.render(engine.current_step); engine.advance) : renderer.collect(engine)
+      #   end
+      #
+      # @param engine [Inquirex::Engine] positioned on a collecting step
+      # @return [Symbol] +:answered+, or +:back+ when the engine stepped back
+      def collect(engine)
+        step_id  = engine.current_step_id
+        can_back = engine.can_back?
+        puts pastel.dim("#{BackKey::LABEL}: back to the previous question") if can_back
+
+        answer = with_back_key(can_back) do
+          render(engine.current_step,
+            suggestion: engine.suggestion_for(step_id),
+            default:    engine.previous_answer(step_id))
+        end
+        engine.answer(answer)
+        :answered
+      rescue BackKey::Pressed
+        go_back(engine)
+        :back
+      end
+
       # Renders a node. Returns the collected answer, or +nil+ for display verbs.
       #
       # @example Collect an answer for the current step, pre-checking LLM suggestions
@@ -74,9 +112,12 @@ module Inquirex
       # @param suggestion [Array, nil] prefill suggestion for the step (option
       #   form values, e.g. from Engine#suggestion_for) — multi-select prompts
       #   render these choices pre-checked so the user confirms or extends
+      # @param default [Object, nil] the answer to pre-fill, e.g. the one the
+      #   user gave before going back (Engine#previous_answer)
       # @return [Object, nil]
-      def render(node, suggestion: nil)
+      def render(node, suggestion: nil, default: nil)
         @current_suggestion = suggestion
+        @current_default    = default
         if node.display?
           render_display_verb(node)
           nil
@@ -85,9 +126,102 @@ module Inquirex
         end
       ensure
         @current_suggestion = nil
+        @current_default    = nil
       end
 
       private
+
+      # Runs the block with the back key live, when +enabled+.
+      #
+      # The handler is registered on the prompt's reader once and consulted
+      # through @back_armed, so the key raises only inside a collecting
+      # prompt: a "Press any key" on a display step treats it as any key.
+      #
+      # tty-prompt subscribes each question to the reader and unsubscribes it
+      # only when the question returns normally. A question unwound by
+      # {BackKey::Pressed} would stay subscribed and go on reacting to every
+      # later keypress, so the listeners it added are removed here.
+      #
+      # @param enabled [Boolean]
+      # @return [Object] the block's value
+      # @raise [BackKey::Pressed] when the key is pressed
+      def with_back_key(enabled)
+        return yield unless enabled && prompt.respond_to?(:on)
+
+        bind_back_key
+        listeners = reader_registrations&.to_a
+        @back_armed = true
+        yield
+      rescue BackKey::Pressed
+        drop_listeners_since(listeners)
+        raise
+      ensure
+        @back_armed = false
+      end
+
+      # @return [void]
+      def bind_back_key
+        return if @back_key_bound
+
+        prompt.on(BackKey::EVENT) { |*| raise BackKey::Pressed if @back_armed }
+        @back_key_bound = true
+      end
+
+      # @param before [Array, nil] the reader's registrations before the prompt opened
+      # @return [void]
+      def drop_listeners_since(before)
+        live = reader_registrations
+        return unless before && live
+
+        (live.to_a - before).each { |stale| live.delete(stale) }
+      end
+
+      # tty-reader keeps its listeners in Wisper's registration set, which it
+      # exposes only privately (its own #unsubscribe reads it the same way).
+      #
+      # @return [Set, nil]
+      def reader_registrations
+        reader = prompt.respond_to?(:reader) ? prompt.reader : nil
+        return nil unless reader.respond_to?(:local_registrations, true)
+
+        reader.send(:local_registrations)
+      end
+
+      # Steps the engine back to the previous question. An LLM step between
+      # them is stepped over too: it asks the user nothing, and landing on it
+      # would rerun the extraction and carry the user straight forward again.
+      #
+      # @param engine [Inquirex::Engine]
+      # @return [void]
+      def go_back(engine)
+        engine.back
+        engine.back while llm_step?(engine.current_step) && engine.can_back?
+        puts pastel.dim("↩ back to #{engine.current_step_id}")
+      end
+
+      # @param node [Inquirex::Node, nil]
+      # @return [Boolean]
+      def llm_step?(node) = node.respond_to?(:llm_verb?) && node.llm_verb?
+
+      # tty-prompt's `default:` option for the value being pre-filled.
+      #
+      # @param value [Object, nil] defaults to the value passed to #render
+      # @return [Hash] {} or { default: value }
+      def default_option(value = @current_default)
+        value.nil? ? {} : { default: value }
+      end
+
+      # select and enum_select preselect by choice NAME, the label the user
+      # sees, while answers are option values; translate back.
+      #
+      # @param node [Inquirex::Node]
+      # @return [Hash] {} or { default: label }
+      def choice_default(node)
+        return {} if @current_default.nil?
+
+        labels = node.respond_to?(:option_labels) ? node.option_labels : nil
+        { default: labels&.fetch(@current_default.to_s, nil) || @current_default.to_s }
+      end
 
       # Dispatches display verbs to their styled renderers.
       # :header uses TTY::Font for a large ASCII-art title.
@@ -164,13 +298,14 @@ module Inquirex
 
       # Single-line text.
       def render_text_input(node)
-        prompt.ask(node.question)
+        prompt.ask(node.question, **default_option)
       end
 
       # Multi-line text (empty line to submit).
       def render_multiline(node)
         puts pastel.bold(node.question)
         puts pastel.dim("Enter your response. Press Enter on a blank line to submit.")
+        puts pastel.dim("Previous answer:\n#{@current_default}") unless @current_default.nil?
         sep(:cyan, "─")
         collect_multiline_text
       end
@@ -210,9 +345,9 @@ module Inquirex
       # @param convert [Symbol] :int or :float
       # @return [Numeric, nil]
       def ask_bounded(node, convert:)
-        return prompt.ask(node.question, convert:) unless node.bounded?
+        return prompt.ask(node.question, convert:, **default_option) unless node.bounded?
 
-        prompt.ask(node.question, convert:, in: bounds_range(node)) do |q|
+        prompt.ask(node.question, convert:, in: bounds_range(node), **default_option) do |q|
           q.messages[:range?] = "Enter a value #{describe_bounds(node)}."
         end
       end
@@ -239,16 +374,17 @@ module Inquirex
 
       # Boolean — tty-prompt yes?.
       def render_yes_no(node)
-        prompt.yes?(node.question)
+        prompt.yes?(node.question, **default_option)
       end
 
       # Single-choice scrollable menu.
       def render_select(node)
-        prompt.select(node.question, select_options(node))
+        prompt.select(node.question, select_options(node), **choice_default(node))
       end
 
       # Multiple-choice list (space to toggle, min 1 selection). Suggested
-      # choices (an LLM extraction the user should confirm) render pre-checked.
+      # choices (an LLM extraction the user should confirm) render pre-checked,
+      # and after going back, the choices the user had made.
       def render_multi_select(node)
         prompt.multi_select(node.question, select_options(node), min: 1, **multi_select_defaults(node))
       end
@@ -261,7 +397,7 @@ module Inquirex
       # @param node [Inquirex::Node]
       # @return [Hash] {} or { default: Array<String> }
       def multi_select_defaults(node)
-        suggested = Array(@current_suggestion)
+        suggested = Array(@current_default.nil? ? @current_suggestion : @current_default)
         return {} if suggested.empty?
 
         labels = node.respond_to?(:option_labels) ? node.option_labels : nil
@@ -271,7 +407,7 @@ module Inquirex
 
       # Numbered choice menu.
       def render_enum_select(node)
-        prompt.enum_select(node.question, select_options(node))
+        prompt.enum_select(node.question, select_options(node), **choice_default(node))
       end
 
       # Hidden / masked input.
@@ -288,7 +424,7 @@ module Inquirex
           opts[:max]  = hint_opts[:max]  if hint_opts[:max]
           opts[:step] = hint_opts[:step] if hint_opts[:step]
         end
-        prompt.slider(node.question, **opts)
+        prompt.slider(node.question, **opts, **default_option)
       end
 
       # Aliases: date, email, phone degrade to plain text_input in TTY.

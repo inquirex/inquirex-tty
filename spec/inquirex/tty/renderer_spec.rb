@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-# rubocop:disable RSpec/AnyInstance, RSpec/NestedGroups, RSpec/ContextWording
+# rubocop:disable-next RSpec/AnyInstance, RSpec/NestedGroups, RSpec/ContextWording
 RSpec.describe Inquirex::TTY::Renderer do
   let(:prompt) { instance_double(TTY::Prompt) }
   let(:renderer) { described_class.new(prompt:) }
@@ -370,4 +370,3 @@ RSpec.describe Inquirex::TTY::Renderer do
     end
   end
 end
-# rubocop:enable RSpec/AnyInstance, RSpec/NestedGroups, RSpec/ContextWording

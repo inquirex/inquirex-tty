@@ -98,8 +98,8 @@ Inquirex.define id: "tax-preparer-2025", version: "1.0.0" do
     options %w[Stocks Bonds Crypto RealEstate MutualFunds]
     widget target: :tty,     type: :multi_select
     widget target: :desktop, type: :checkbox_group
-    transition to: :crypto_details,   if_rule: contains(:investment_details, "Crypto")
-    transition to: :rental_details,   if_rule: contains(:income_types, "Rental")
+    transition to: :crypto_details, if_rule: contains(:investment_details, "Crypto")
+    transition to: :rental_details, if_rule: contains(:income_types, "Rental")
     transition to: :state_filing
   end
 

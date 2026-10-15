@@ -1,0 +1,5 @@
+{
+  "income_types": ["w2", "rental"],
+  "client_name": "Alan Turing",
+  "client_email": "alan.turing@manchester.edu"
+}

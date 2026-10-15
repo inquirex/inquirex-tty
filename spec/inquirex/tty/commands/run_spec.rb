@@ -6,7 +6,7 @@ require "tempfile"
 # `allow_any_instance_of` is the cleanest lever for objects the CLI creates
 # internally (Engine, LLM adapters, TTY::Font) — we would otherwise have to
 # redesign the command for DI just for tests.
-# rubocop:disable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub
+# rubocop:disable-next RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub
 RSpec.describe Inquirex::TTY::Commands::Run do
   subject(:command) { described_class.new }
 
@@ -137,6 +137,105 @@ RSpec.describe Inquirex::TTY::Commands::Run do
     end
   end
 
+  describe "results channel" do
+    let(:answers_file) { Tempfile.new(["answers", ".json"]) }
+
+    # Runs the block with stdout and stderr captured separately.
+    def capture
+      out = StringIO.new
+      err = StringIO.new
+      original = [$stdout, $stderr]
+      $stdout = out
+      $stderr = err
+      yield
+      [out.string, err.string]
+    ensure
+      $stdout, $stderr = original
+    end
+
+    before do
+      allow(command).to receive_messages(public_ip: "203.0.113.7", local_ip: "192.168.1.10")
+      answers_file.write(JSON.generate("name" => "Alan Turing"))
+      answers_file.flush
+    end
+
+    after { answers_file.close! }
+
+    context "when run interactively" do
+      let(:prompt)   { instance_double(TTY::Prompt) }
+      let(:renderer) { Inquirex::TTY::Renderer.new(prompt:) }
+
+      before do
+        allow(Inquirex::TTY::Renderer).to receive(:new).and_return(renderer)
+        allow(prompt).to receive(:keypress)
+        allow(prompt).to receive(:ask).and_return("Alan Turing")
+      end
+
+      it "prints only the results on stdout, and everything else on stderr" do
+        out, err = capture { command.call(flow_file: hello_flow_path) }
+
+        expect(JSON.parse(out).dig("answers", "name")).to eq("Alan Turing")
+        expect(err).to match(/Step 1: .*name/)
+        expect(err).not_to include('"answers"')
+      end
+    end
+
+    context "when run headless" do
+      before do
+        allow(TTY::Prompt).to receive(:new).and_raise("a headless run built a TTY::Prompt")
+        allow(Inquirex::TTY::Renderer).to receive(:new).and_raise("a headless run built a Renderer")
+      end
+
+      it "runs from --answers and prints the results on stdout" do
+        out, err = capture { command.call(flow_file: hello_flow_path, answers: answers_file.path) }
+
+        results = JSON.parse(out)
+        expect(results).to include("flow_file" => hello_flow_path, "path_taken" => %w[name farewell])
+        expect(results.dig("answers", "name")).to eq("Alan Turing")
+        expect(err).to be_empty
+      end
+
+      it "never asks the network for a public IP" do
+        capture { command.call(flow_file: hello_flow_path, answers: answers_file.path) }
+        expect(command).not_to have_received(:public_ip)
+      end
+
+      it "writes the results to -o FILE and nothing to stdout" do
+        Tempfile.create(["results", ".json"]) do |file|
+          out, err = capture { command.call(flow_file: hello_flow_path, answers: answers_file.path, output: file.path) }
+
+          expect(out).to be_empty
+          expect(JSON.parse(File.read(file.path)).dig("answers", "name")).to eq("Alan Turing")
+          expect(err).to include("Results saved to #{file.path}")
+        end
+      end
+
+      it "treats -o - as stdout" do
+        out, = capture { command.call(flow_file: hello_flow_path, answers: answers_file.path, output: "-") }
+        expect(JSON.parse(out).dig("answers", "name")).to eq("Alan Turing")
+      end
+
+      it "exits non-zero naming a required step --yes cannot answer" do
+        out, err = capture do
+          expect { command.call(flow_file: hello_flow_path, yes: true) }
+            .to raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
+        end
+
+        expect(out).to be_empty
+        expect(err).to include(":name")
+      end
+
+      it "exits non-zero on an answers file it cannot read" do
+        _, err = capture do
+          expect { command.call(flow_file: hello_flow_path, answers: "answers.txt") }
+            .to raise_error(SystemExit) { |e| expect(e.status).to eq(1) }
+        end
+
+        expect(err).to include("must be .json, .yml or .yaml")
+      end
+    end
+  end
+
   describe "#build_llm_adapter (private)" do
     before do
       # Clear every adapter-selecting env var for a clean slate
@@ -184,6 +283,33 @@ RSpec.describe Inquirex::TTY::Commands::Run do
       stub_const("ENV", ENV.to_h.merge("OPENAI_API_KEY" => "sk-test"))
       expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::OpenAIAdapter)
     end
+
+    it "sees a key that arrived after the configuration was first read, as one from .env does" do
+      Inquirex::LLM.configuration
+      ENV["ANTHROPIC_API_KEY"] = "sk-from-dotenv"
+      expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::AnthropicAdapter)
+    end
+
+    it "honors INQUIREX_LLM_ADAPTER=openrouter" do
+      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "openrouter", "OPENROUTER_API_KEY" => "sk-test"))
+      expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::OpenRouterAdapter)
+    end
+
+    it "honors INQUIREX_LLM_ADAPTER=jev" do
+      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "jev", "TYPESAFE_API_KEY" => "ts-test"))
+      expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::JevAdapter)
+    end
+
+    it "rejects an unknown INQUIREX_LLM_ADAPTER, naming the variable" do
+      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "nonesuch"))
+      expect { command.send(:build_llm_adapter) }
+        .to raise_error(Inquirex::LLM::Errors::ConfigurationError, /INQUIREX_LLM_ADAPTER/)
+    end
+
+    it "builds the adapter with the model inquirex-llm is configured with" do
+      stub_const("ENV", ENV.to_h.merge("ANTHROPIC_API_KEY" => "sk-test", "INQUIREX_LLM_ANTHROPIC_MODEL" => "claude-opus-5-5"))
+      expect(command.send(:build_llm_adapter).instance_variable_get(:@default_model)).to eq("claude-opus-5-5")
+    end
   end
 
   describe "#adapter_label (private)" do
@@ -195,6 +321,16 @@ RSpec.describe Inquirex::TTY::Commands::Run do
     it "returns 'GPT' for the OpenAI adapter" do
       adapter = Inquirex::LLM::OpenAIAdapter.allocate
       expect(command.send(:adapter_label, adapter)).to eq("GPT")
+    end
+
+    it "returns 'OpenRouter' for the OpenRouter adapter, not its OpenAI parent's label" do
+      adapter = Inquirex::LLM::OpenRouterAdapter.allocate
+      expect(command.send(:adapter_label, adapter)).to eq("OpenRouter")
+    end
+
+    it "returns 'Jev' for the Jev adapter" do
+      adapter = Inquirex::LLM::JevAdapter.allocate
+      expect(command.send(:adapter_label, adapter)).to eq("Jev")
     end
 
     it "returns 'the null adapter' for anything else" do
@@ -245,4 +381,3 @@ RSpec.describe Inquirex::TTY::Commands::Run do
     end
   end
 end
-# rubocop:enable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub
