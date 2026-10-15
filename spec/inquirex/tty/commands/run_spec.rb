@@ -67,6 +67,24 @@ RSpec.describe Inquirex::TTY::Commands::Run do
       end
     end
 
+    context "when the user presses Ctrl-C" do
+      let(:definition) { Inquirex::TTY::FlowLoader.load(hello_flow_path) }
+      let(:renderer)   { Inquirex::TTY::Renderer.new(prompt: instance_double(TTY::Prompt)) }
+
+      before do
+        allow(Inquirex::TTY::FlowLoader).to receive(:load).and_return(definition)
+        allow(Inquirex::TTY::Renderer).to receive(:new).and_return(renderer)
+        allow(renderer).to receive(:collect).and_raise(TTY::Reader::InputInterrupt)
+        allow($stdout).to receive(:puts)
+        allow($stderr).to receive(:puts)
+      end
+
+      it "exits with status 130" do
+        expect { command.call(flow_file: hello_flow_path) }
+          .to raise_error(SystemExit) { |e| expect(e.status).to eq(130) }
+      end
+    end
+
     context "when the engine raises an Inquirex error" do
       let(:definition) { Inquirex::TTY::FlowLoader.load(hello_flow_path) }
 
