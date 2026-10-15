@@ -94,13 +94,28 @@ On completion, outputs a JSON summary:
     "state_filing": ["California"],
     "foreign_accounts": "no",
     "deduction_types": ["Medical"],
-    "client_name": "Konstantin Gredeskoul",
-    "client_email": "kigster@gmail.com"
+    "client_name": "Alan Turing",
+    "client_email": "alan.turing@manchester.edu"
   },
   "steps_completed": 10,
   "completed_at": "2026-04-13T23:51:33-07:00"
 }
 ```
+
+#### Keys
+
+Every question shows a reminder line, `⌫ back · ^S skip · ? keys · ^C abort`. Press `?` to see the full keymap:
+
+| Key             | Action                                                |
+| --------------- | ----------------------------------------------------- |
+| `Enter`         | submit the answer                                     |
+| `Backspace`     | go back to the previous question (on an empty answer) |
+| `Ctrl-S`        | skip the question (optional questions only)           |
+| `↑` `↓` `Space` | move and toggle in a list                             |
+| `?`             | show the keymap (on an empty answer)                  |
+| `Ctrl-C`        | abort without saving (exit status 130)                |
+
+`Backspace` and `?` still edit text: they navigate only when the answer is empty, and always in lists and "press any key" prompts. Going back re-asks the earlier question with its answer pre-filled, using `Inquirex::Engine#back` (inquirex ≥ 0.12.1).
 
 ### `inquirex-tty validate <flow_file>`
 
