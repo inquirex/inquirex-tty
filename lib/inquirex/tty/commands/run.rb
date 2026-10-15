@@ -29,6 +29,9 @@ module Inquirex
         def call(flow_file:, **options)
           json = on_stderr { JSON.pretty_generate(results_for(flow_file, **options)) }
           write_results(json, options[:output])
+        rescue ::TTY::Reader::InputInterrupt
+          on_stderr { error("Aborted — no answers were saved.") }
+          exit 130
         rescue Inquirex::TTY::Error => e
           on_stderr { error(e.message) }
           exit 1

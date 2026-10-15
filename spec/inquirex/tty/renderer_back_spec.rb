@@ -3,20 +3,21 @@
 require "spec_helper"
 require "tty/prompt/test"
 
-# How the back key interrupts a prompt (plan 010.00, open question 2):
+# How a navigation key interrupts a prompt (plan 010.00, open question 2):
 #
-# Ctrl-B raises Inquirex::TTY::BackKey::Pressed from a handler registered on
-# the prompt's tty-reader for its :keyctrl_b event. tty-reader publishes that
-# event from inside every widget's read loop (ask, yes?, select, multi_select,
-# enum_select, slider), so one exception unwinds whichever prompt is open. The
-# alternative, a TTY::Prompt subclass, would have to override the read loop
-# of each widget class separately. The cost of raising is that tty-prompt
-# leaves the unwound question subscribed to the reader; Renderer removes the
-# listeners it added, and an example below checks that.
+# Inquirex::TTY::KeyMap, subscribed to the prompt's tty-reader, raises
+# Inquirex::TTY::Navigation from inside every widget's read loop (ask, yes?,
+# select, multi_select, enum_select, slider), so one exception unwinds
+# whichever prompt is open. The alternative, a TTY::Prompt subclass, would
+# have to override the read loop of each widget class separately. The cost of
+# raising is that tty-prompt leaves the unwound question subscribed to the
+# reader; Renderer removes the listeners it added, and an example below
+# checks that.
 #
 # These examples drive a real TTY::Prompt::Test, whose input is a StringIO:
-# "\C-b" is the byte the terminal sends for Ctrl-B, so the key travels the
-# same path through tty-reader that it does at a keyboard.
+# "\C-b", "\x7F" (Backspace), "\x13" (Ctrl-S) are the bytes a terminal sends,
+# so the keys travel the same path through tty-reader that they do at a
+# keyboard.
 # Named for the feature (plan 010.00, F1) rather than the method.
 # rubocop:disable-next RSpec/SpecFilePathFormat
 RSpec.describe Inquirex::TTY::Renderer, "#collect" do
@@ -92,9 +93,9 @@ RSpec.describe Inquirex::TTY::Renderer, "#collect" do
       expect(engine.answers).to include(name: "Alan", color: "blue")
     end
 
-    it "names the key in a tip line once there is somewhere to go back to" do
+    it "offers back in the hint line once there is somewhere to go back to" do
       drive
-      expect($stdout).to have_received(:puts).with(/Ctrl-B: back to the previous question/).at_least(:once)
+      expect($stdout).to have_received(:puts).with(/⌫ back · \^S skip · \? keys · \^C abort/).at_least(:once)
     end
 
     it "leaves no listener of the abandoned question on the reader" do
@@ -113,9 +114,78 @@ RSpec.describe Inquirex::TTY::Renderer, "#collect" do
       expect(engine.current_step_id).to eq(:intro)
     end
 
-    it "shows no tip line" do
+    it "does not offer back in the hint line" do
       renderer.collect(engine)
-      expect($stdout).not_to have_received(:puts).with(/Ctrl-B/)
+      expect($stdout).not_to have_received(:puts).with(/back/)
+    end
+  end
+
+  context "when Backspace is pressed on an empty answer to the second question" do
+    # name: "Alan"; colour: Backspace; name again: Enter keeps "Alan"; Down + Enter.
+    before { type("Alan\r\x7F\r\e[B\r") }
+
+    it "goes back like Ctrl-B" do
+      drive
+      expect(screen).to include("Your name? (Alan)")
+      expect(engine.answers).to include(name: "Alan", color: "blue")
+    end
+  end
+
+  context "when Backspace deletes typed text" do
+    before { type("Alx\x7Fan\r") }
+
+    it "edits the answer instead of going back" do
+      expect(renderer.collect(engine)).to eq(:answered)
+      expect(engine.answers).to eq(name: "Alan")
+    end
+  end
+
+  context "when ? is pressed on an empty answer" do
+    # ?: help box; any key returns; then the answer.
+    before { type("?xAlan\r") }
+
+    it "shows the keymap and asks the same question again" do
+      expect(renderer.collect(engine)).to eq(:help)
+      expect($stdout).to have_received(:puts).with(/Ctrl-S +skip the question/)
+      expect(renderer.collect(engine)).to eq(:answered)
+      expect(engine.answers).to eq(name: "Alan")
+    end
+  end
+
+  context "when Ctrl-S is pressed on a required question" do
+    before { type("\x13Alan\r") }
+
+    it "refuses the skip and asks again" do
+      expect(renderer.collect(engine)).to eq(:stay)
+      expect($stdout).to have_received(:puts).with(/required and cannot be skipped/)
+      expect(engine.current_step_id).to eq(:name)
+    end
+  end
+
+  context "when Ctrl-S is pressed on an optional question" do
+    let(:definition) do
+      Inquirex.define id: "skip-demo" do
+        start :nickname
+
+        ask :nickname do
+          type :string
+          question "Nickname?"
+          optional
+          transition to: :done
+        end
+
+        say :done do
+          text "Thanks."
+        end
+      end
+    end
+
+    before { type("\x13") }
+
+    it "skips it" do
+      expect(renderer.collect(engine)).to eq(:skipped)
+      expect(engine.skipped?(:nickname)).to be(true)
+      expect(engine.current_step_id).to eq(:done)
     end
   end
 
