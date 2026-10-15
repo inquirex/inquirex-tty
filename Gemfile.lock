@@ -3,8 +3,8 @@ PATH
   specs:
     inquirex-tty (0.10.0)
       dry-cli (~> 1.0)
-      inquirex (~> 0.9.5)
-      inquirex-llm (~> 0.9.5)
+      inquirex (~> 0.12, >= 0.12.1)
+      inquirex-llm (>= 0.10)
       ostruct (~> 0.6)
       pastel (~> 0.8)
       tty-box (~> 0.7)
@@ -22,9 +22,10 @@ GEM
     docile (1.4.1)
     dry-cli (1.4.1)
     erb (6.0.7)
-    inquirex (0.9.5)
+    inquirex (0.12.1)
       ostruct (~> 0.6)
-    inquirex-llm (0.9.5)
+      prism (>= 1.7, < 2)
+    inquirex-llm (0.10.0)
       inquirex (~> 0.6)
     io-console (0.8.2)
     irb (1.18.0)
@@ -136,8 +137,8 @@ PLATFORMS
 DEPENDENCIES
   colored2
   coverage-badge
-  inquirex (~> 0.9.5)
-  inquirex-llm (~> 0.9.5)
+  inquirex (~> 0.12, >= 0.12.1)
+  inquirex-llm (>= 0.10)
   inquirex-tty!
   irb
   rake
@@ -156,8 +157,8 @@ CHECKSUMS
   docile (1.4.1) sha256=96159be799bfa73cdb721b840e9802126e4e03dfc26863db73647204c727f21e
   dry-cli (1.4.1) sha256=b8015bb76c708aa8705a36faf694973e75eeeffca39b89c8e172dc6f66a7d874
   erb (6.0.7) sha256=c5ca6dc25b0ef974a44dc8f59fe847577122483b1968a38dec305c60bf91ee92
-  inquirex (0.9.5) sha256=90b3caad195ff674415aa2906de85aa723ddb0e614288692b31d762e73b4407e
-  inquirex-llm (0.9.5) sha256=cfef639d6de43b584cc03e456ae4c025e68cb82f59a8eb128bdc7403f8facbc1
+  inquirex (0.12.1) sha256=ec9bda0f2de064935144c4ec258c81b939c6883dfbe3a58ef6a6568c909b075e
+  inquirex-llm (0.10.0) sha256=e6ffa9d0ade6fa81300254ac2446a8430a618eb6403f035ee6831322550f8571
   inquirex-tty (0.10.0)
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
@@ -208,4 +209,4 @@ CHECKSUMS
   yard (0.9.45) sha256=52e211493f7cb8a3ebf7e104a25a1e73937a3103092545d34cb88fafebb3dc51
 
 BUNDLED WITH
-  4.0.10
+  4.1.0.beta2
