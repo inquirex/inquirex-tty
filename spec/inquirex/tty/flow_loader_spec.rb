@@ -12,7 +12,7 @@ RSpec.describe Inquirex::TTY::FlowLoader do
     it { is_expected.to be_a(Inquirex::Definition) }
     its(:id) { is_expected.to eq("hello-world") }
     its(:start_step_id) { is_expected.to eq(:name) }
-    its(:step_ids)     { is_expected.to include(:name, :farewell) }
+    its(:step_ids) { is_expected.to include(:name, :farewell) }
   end
 
   describe "#initialize" do

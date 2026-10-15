@@ -18,7 +18,7 @@ require "tty/prompt/test"
 # "\C-b" is the byte the terminal sends for Ctrl-B, so the key travels the
 # same path through tty-reader that it does at a keyboard.
 # Named for the feature (plan 010.00, F1) rather than the method.
-# rubocop:disable RSpec/SpecFilePathFormat
+# rubocop:disable-next RSpec/SpecFilePathFormat
 RSpec.describe Inquirex::TTY::Renderer, "#collect" do
   subject(:renderer) { described_class.new(prompt:) }
 
@@ -211,4 +211,3 @@ RSpec.describe Inquirex::TTY::Renderer, "#collect" do
     end
   end
 end
-# rubocop:enable RSpec/SpecFilePathFormat

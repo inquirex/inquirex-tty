@@ -29,9 +29,8 @@ module Inquirex
       # @raise [Inquirex::TTY::Error] on syntax error
       def load
         content = File.read(@path)
-        # rubocop:disable Security/Eval
+        # rubocop:disable-next Security/Eval
         eval(content, TOPLEVEL_BINDING.dup, @path, 1)
-        # rubocop:enable Security/Eval
       rescue SyntaxError => e
         raise Inquirex::TTY::Error, "Syntax error in #{@path}: #{e.message}"
       end

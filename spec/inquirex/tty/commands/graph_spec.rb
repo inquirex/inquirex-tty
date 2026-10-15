@@ -6,7 +6,7 @@ require "tmpdir"
 
 # Stubbing `system` on the subject is the right tool here — the command
 # shells out to mermaid-cli and we do not want the real binary on CI.
-# rubocop:disable RSpec/SubjectStub
+# rubocop:disable-next RSpec/SubjectStub
 RSpec.describe Inquirex::TTY::Commands::Graph do
   subject(:command) { described_class.new }
 
@@ -153,4 +153,3 @@ RSpec.describe Inquirex::TTY::Commands::Graph do
     end
   end
 end
-# rubocop:enable RSpec/SubjectStub
