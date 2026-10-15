@@ -83,7 +83,19 @@ Options:
 
 **Results channel.** The results JSON goes to stdout, and only the results: every prompt, box and progress line of an interactive run is drawn on stderr. `-o FILE` writes the results to the file instead and leaves stdout empty. Until 0.12.0 the results went to stderr.
 
-**Going back.** Press **Ctrl-B** at any question to return to the previous one, with your earlier answer filled in as the default. The tip line under each question after the first names the key. Display steps and LLM steps in between are stepped over.
+**Keys.** A dim hint line above each question lists the navigation keys (`⌫ back · ^S skip · ? keys · ^C abort`); press `?` for the full keymap.
+
+| Key             | Action                                                                  |
+| --------------- | ----------------------------------------------------------------------- |
+| `Enter`         | submit the answer; an empty answer keeps the one shown in parentheses   |
+| `Backspace`     | go back to the previous question (on an empty answer; always in a list) |
+| `Ctrl-B`        | go back to the previous question                                        |
+| `Ctrl-S`        | skip the question (optional questions only)                             |
+| `↑` `↓` `Space` | move and toggle in a list                                               |
+| `?`             | show the keymap (on an empty answer; always in a list)                  |
+| `Ctrl-C`        | abort without saving (exit status 130)                                  |
+
+**Going back** returns to the previous question with your earlier answer filled in as the default. Display steps and LLM steps in between are stepped over. On the first question the back keys do nothing, and `Backspace` with text typed simply deletes a character.
 
 **Headless runs.** With `--answers` or `--yes` the flow runs without a terminal: no prompt is drawn, standard input is never read, and no LLM adapter is called, which makes it the way to run a flow in tests and CI.
 
@@ -454,8 +466,8 @@ inquirex-tty/
     │   ├── graph.rb                # Mermaid diagram export
     │   ├── export.rb               # JSON / YAML serialization
     │   └── version.rb              # Print version info
-    ├── renderer.rb                 # Node → tty-prompt widget dispatcher, Ctrl-B back
-    ├── back_key.rb                 # The back key and the exception that unwinds a prompt
+    ├── renderer.rb                 # Node → tty-prompt widget dispatcher, back/skip/help
+    ├── key_map.rb                  # Navigation keys and the exception that unwinds a prompt
     ├── answers_file.rb             # --answers: JSON or YAML preset answers
     ├── flow_loader.rb              # Load .rb flow definitions
     ├── output_path.rb              # Shared -o/--output path resolution
@@ -467,7 +479,7 @@ inquirex-tty/
 
 `Inquirex::TTY::Renderer` is the core class that maps nodes to tty-prompt calls. It reads the `:tty` widget hint from each node (via `WidgetRegistry` defaults or explicit DSL hints) and dispatches to the matching `render_*` method.
 
-`Renderer#collect(engine)` asks the engine's current step and answers it, or, when the user presses Ctrl-B, calls `Engine#back` and returns `:back`; the run loop then asks the previous question again with `Engine#previous_answer` as its default. Ctrl-B raises `Inquirex::TTY::BackKey::Pressed` from a handler on tty-reader's `:keyctrl_b` event, which unwinds whichever tty-prompt widget is open.
+`Renderer#collect(engine)` asks the engine's current step and answers it, unless the user presses a navigation key: back calls `Engine#back` and returns `:back` (the run loop then asks the previous question again with `Engine#previous_answer` as its default), skip calls `Engine#skip` on an optional step and returns `:skipped` (`:stay` on a required one), and `?` shows the keymap and returns `:help`. `Inquirex::TTY::KeyMap`, a tty-reader listener, raises `Inquirex::TTY::Navigation` for the key, which unwinds whichever tty-prompt widget is open.
 
 The `TTY::Prompt` instance is injectable for testing:
 
