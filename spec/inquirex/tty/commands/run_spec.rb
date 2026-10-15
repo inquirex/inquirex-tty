@@ -6,7 +6,7 @@ require "tempfile"
 # `allow_any_instance_of` is the cleanest lever for objects the CLI creates
 # internally (Engine, LLM adapters, TTY::Font) — we would otherwise have to
 # redesign the command for DI just for tests.
-# rubocop:disable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub
+# rubocop:disable-next RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub
 RSpec.describe Inquirex::TTY::Commands::Run do
   subject(:command) { described_class.new }
 
@@ -290,8 +290,18 @@ RSpec.describe Inquirex::TTY::Commands::Run do
       expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::AnthropicAdapter)
     end
 
+    it "honors INQUIREX_LLM_ADAPTER=openrouter" do
+      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "openrouter", "OPENROUTER_API_KEY" => "sk-test"))
+      expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::OpenRouterAdapter)
+    end
+
+    it "honors INQUIREX_LLM_ADAPTER=jev" do
+      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "jev", "TYPESAFE_API_KEY" => "ts-test"))
+      expect(command.send(:build_llm_adapter)).to be_a(Inquirex::LLM::JevAdapter)
+    end
+
     it "rejects an unknown INQUIREX_LLM_ADAPTER, naming the variable" do
-      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "jev"))
+      stub_const("ENV", ENV.to_h.merge("INQUIREX_LLM_ADAPTER" => "nonesuch"))
       expect { command.send(:build_llm_adapter) }
         .to raise_error(Inquirex::LLM::Errors::ConfigurationError, /INQUIREX_LLM_ADAPTER/)
     end
@@ -311,6 +321,16 @@ RSpec.describe Inquirex::TTY::Commands::Run do
     it "returns 'GPT' for the OpenAI adapter" do
       adapter = Inquirex::LLM::OpenAIAdapter.allocate
       expect(command.send(:adapter_label, adapter)).to eq("GPT")
+    end
+
+    it "returns 'OpenRouter' for the OpenRouter adapter, not its OpenAI parent's label" do
+      adapter = Inquirex::LLM::OpenRouterAdapter.allocate
+      expect(command.send(:adapter_label, adapter)).to eq("OpenRouter")
+    end
+
+    it "returns 'Jev' for the Jev adapter" do
+      adapter = Inquirex::LLM::JevAdapter.allocate
+      expect(command.send(:adapter_label, adapter)).to eq("Jev")
     end
 
     it "returns 'the null adapter' for anything else" do
@@ -361,4 +381,3 @@ RSpec.describe Inquirex::TTY::Commands::Run do
     end
   end
 end
-# rubocop:enable RSpec/AnyInstance, RSpec/MultipleMemoizedHelpers, RSpec/NestedGroups, RSpec/SubjectStub

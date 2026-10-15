@@ -151,6 +151,8 @@ module Inquirex
         #   INQUIREX_LLM_ADAPTER=null         → NullAdapter (forced offline)
         #   INQUIREX_LLM_ADAPTER=anthropic    → AnthropicAdapter (fails if no key)
         #   INQUIREX_LLM_ADAPTER=openai       → OpenAIAdapter (fails if no key)
+        #   INQUIREX_LLM_ADAPTER=openrouter   → OpenRouterAdapter (never auto-detected)
+        #   INQUIREX_LLM_ADAPTER=jev          → JevAdapter (never auto-detected)
         #   ANTHROPIC_API_KEY present         → AnthropicAdapter
         #   OPENAI_API_KEY present            → OpenAIAdapter
         #   otherwise                         → NullAdapter
@@ -165,10 +167,13 @@ module Inquirex
           Inquirex::LLM.adapter
         end
 
+        # OpenRouterAdapter subclasses OpenAIAdapter, so it must be matched first.
         def adapter_label(adapter)
           case adapter
-          when Inquirex::LLM::AnthropicAdapter then "Claude"
-          when Inquirex::LLM::OpenAIAdapter    then "GPT"
+          when Inquirex::LLM::AnthropicAdapter  then "Claude"
+          when Inquirex::LLM::OpenRouterAdapter then "OpenRouter"
+          when Inquirex::LLM::OpenAIAdapter     then "GPT"
+          when Inquirex::LLM::JevAdapter        then "Jev"
           else "the null adapter"
           end
         rescue NameError
