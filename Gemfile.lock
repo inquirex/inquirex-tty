@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    inquirex-tty (0.12.0)
+    inquirex-tty (0.12.1)
       dry-cli (~> 1.0)
       inquirex (~> 0.12)
       inquirex-llm (~> 0.12)
@@ -144,7 +144,7 @@ CHECKSUMS
   dry-cli (1.4.1) sha256=b8015bb76c708aa8705a36faf694973e75eeeffca39b89c8e172dc6f66a7d874
   inquirex (0.12.1) sha256=ec9bda0f2de064935144c4ec258c81b939c6883dfbe3a58ef6a6568c909b075e
   inquirex-llm (0.12.1) sha256=ba97590a48d1d6c49f009abbbd70139933d89b908fb4ec612e5d4eda4bdc3889
-  inquirex-tty (0.12.0)
+  inquirex-tty (0.12.1)
   json (3.1.0) sha256=3ce7ccf8fde58960177a3a756c31f292a4c1e1dedee884547096a5b0604e3bd8
   language_server-protocol (3.17.0.6) sha256=5ef2c0c138f8267e1bc631d3328347d354f96724b0af22f2c79516120443b7f0
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
