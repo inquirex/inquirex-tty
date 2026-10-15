@@ -39,13 +39,14 @@ module Inquirex
             # @param title [String, nil] optional title on the top border
             # @param bg [Symbol] background color name
             # @param fg [Symbol] foreground color name
+            # @param align [Symbol] :center, :left or :right
             # @return [void]
-            def box(text, title: nil, bg: :green, fg: :white) # rubocop:disable Naming/MethodParameterName
+            def box(text, title: nil, bg: :green, fg: :white, align: :center) # rubocop:disable Naming/MethodParameterName
               w = [width, 80].min
               args = {
                 width:   w,
                 padding: { top: 0, bottom: 0, left: 1, right: 1 },
-                align:   :center,
+                align:   align,
                 style:   { fg: fg, bg: bg,
                          border: { type: :thin, fg: fg, bg: bg } }
               }

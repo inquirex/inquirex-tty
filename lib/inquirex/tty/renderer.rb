@@ -25,9 +25,9 @@ module Inquirex
     # Header display verb uses TTY::Font for large ASCII-art section titles.
     #
     # {#collect} drives one collecting step against an engine and binds the
-    # back key ({BackKey}): pressed in any open prompt, it steps the engine
-    # back and the caller's loop re-asks the previous question with its
-    # answer as the default.
+    # navigation keys ({KeyMap}): back steps the engine back and the caller's
+    # loop re-asks the previous question with its answer as the default; skip
+    # declines an optional question; "?" shows the keymap.
     class Renderer
       include UIHelper
 
@@ -67,14 +67,16 @@ module Inquirex
         sep(:magenta, "─")
       end
 
-      # Asks the engine's current collecting step and answers it. When the
-      # user presses the back key instead, the engine steps back and nothing
-      # is answered; the caller's loop then asks the previous question again,
-      # pre-filled with the answer it had.
+      # Asks the engine's current collecting step and answers it, unless the
+      # user presses a navigation key ({KeyMap}) instead:
       #
-      # The tip line naming the key appears only when there is somewhere to
-      # go back to, and the key is live only then: on the first question it
-      # does nothing.
+      # - back: the engine steps back and nothing is answered; the caller's
+      #   loop then asks the previous question again, pre-filled with the
+      #   answer it had. Back is offered only when there is somewhere to go
+      #   back to: on the first question the keys do nothing.
+      # - skip: an optional question is skipped (Engine#skip); a required one
+      #   is refused with a notice and asked again.
+      # - help: the keymap is shown, then the loop asks the question again.
       #
       # @example Drive a flow's collecting steps
       #   until engine.finished?
@@ -82,22 +84,33 @@ module Inquirex
       #   end
       #
       # @param engine [Inquirex::Engine] positioned on a collecting step
-      # @return [Symbol] +:answered+, or +:back+ when the engine stepped back
+      # @return [Symbol] +:answered+, +:back+, +:skipped+, +:help+, or +:stay+
+      #   when a required question refused a skip
       def collect(engine)
         step_id  = engine.current_step_id
         can_back = engine.can_back?
-        puts pastel.dim("#{BackKey::LABEL}: back to the previous question") if can_back
+        puts pastel.dim(KeyMap.hint(can_back:))
 
-        answer = with_back_key(can_back) do
+        answer = with_keys(can_back) do
           render(engine.current_step,
             suggestion: engine.suggestion_for(step_id),
             default:    engine.previous_answer(step_id))
         end
         engine.answer(answer)
         :answered
-      rescue BackKey::Pressed
-        go_back(engine)
-        :back
+      rescue Navigation => e
+        navigate(engine, e.action)
+      end
+
+      # Shows every navigation key in a box and waits for a key.
+      #
+      # @return [void]
+      def show_keymap
+        width = KeyMap::BINDINGS.map { |key, _| key.length }.max
+        lines = KeyMap::BINDINGS.map { |key, action| "#{key.ljust(width)}   #{action}" }
+        puts
+        puts box(lines.join("\n"), title: "Keys", bg: :blue, fg: :white, align: :left)
+        prompt.keypress(pastel.dim("Press any key to return to the question..."))
       end
 
       # Renders a node. Returns the collected answer, or +nil+ for display verbs.
@@ -131,40 +144,60 @@ module Inquirex
 
       private
 
-      # Runs the block with the back key live, when +enabled+.
-      #
-      # The handler is registered on the prompt's reader once and consulted
-      # through @back_armed, so the key raises only inside a collecting
-      # prompt: a "Press any key" on a display step treats it as any key.
+      # Runs the block with the navigation keys live. The {KeyMap} listens
+      # only while the block runs, so a "Press any key" on a display step
+      # treats every key as any key.
       #
       # tty-prompt subscribes each question to the reader and unsubscribes it
-      # only when the question returns normally. A question unwound by
-      # {BackKey::Pressed} would stay subscribed and go on reacting to every
-      # later keypress, so the listeners it added are removed here.
+      # only when the question returns normally, and tty-reader's
+      # subscribe-with-a-block does the same. A question unwound by
+      # {Navigation} would stay subscribed and go on reacting to every later
+      # keypress, so every listener added while the block ran, the KeyMap
+      # included, is removed here.
       #
-      # @param enabled [Boolean]
+      # @param can_back [Boolean]
       # @return [Object] the block's value
-      # @raise [BackKey::Pressed] when the key is pressed
-      def with_back_key(enabled)
-        return yield unless enabled && prompt.respond_to?(:on)
+      # @raise [Navigation] when a navigation key is pressed
+      def with_keys(can_back)
+        return yield unless prompt.respond_to?(:subscribe)
 
-        bind_back_key
         listeners = reader_registrations&.to_a
-        @back_armed = true
+        key_map = KeyMap.new(can_back:)
+        prompt.subscribe(key_map)
         yield
-      rescue BackKey::Pressed
-        drop_listeners_since(listeners)
-        raise
       ensure
-        @back_armed = false
+        if key_map
+          drop_listeners_since(listeners)
+          prompt.unsubscribe(key_map)
+        end
       end
 
-      # @return [void]
-      def bind_back_key
-        return if @back_key_bound
+      # Acts on a navigation key pressed during {#collect}.
+      #
+      # @param engine [Inquirex::Engine]
+      # @param action [Symbol] :back, :skip or :help
+      # @return [Symbol] what {#collect} returns
+      def navigate(engine, action)
+        case action
+        when :back then go_back(engine)
+        when :skip then skip(engine)
+        else
+          show_keymap
+          :help
+        end
+      end
 
-        prompt.on(BackKey::EVENT) { |*| raise BackKey::Pressed if @back_armed }
-        @back_key_bound = true
+      # @param engine [Inquirex::Engine]
+      # @return [Symbol] :skipped, or :stay when the question is required
+      def skip(engine)
+        if engine.current_step.required?
+          puts pastel.yellow("  ⚠ This question is required and cannot be skipped.")
+          return :stay
+        end
+
+        puts pastel.dim("↷ skipped #{engine.current_step_id}")
+        engine.skip
+        :skipped
       end
 
       # @param before [Array, nil] the reader's registrations before the prompt opened
@@ -192,11 +225,12 @@ module Inquirex
       # would rerun the extraction and carry the user straight forward again.
       #
       # @param engine [Inquirex::Engine]
-      # @return [void]
+      # @return [Symbol] :back
       def go_back(engine)
         engine.back
         engine.back while llm_step?(engine.current_step) && engine.can_back?
         puts pastel.dim("↩ back to #{engine.current_step_id}")
+        :back
       end
 
       # @param node [Inquirex::Node, nil]
