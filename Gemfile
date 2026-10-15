@@ -13,7 +13,6 @@ gem "inquirex",     INQUIREX_VERSION
 gem "inquirex-llm", INQUIREX_VERSION
 
 gem "bundle-audit"
-gem "irb"
 gem "rake"
 
 gem "rspec",       "~> 3.0"
