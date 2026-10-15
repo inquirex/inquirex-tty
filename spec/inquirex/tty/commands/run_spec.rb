@@ -67,6 +67,123 @@ RSpec.describe Inquirex::TTY::Commands::Run do
       end
     end
 
+    context "with navigation keys" do
+      let(:back_flow_path) { File.expand_path("../../../fixtures/back_flow.rb", __dir__) }
+      let(:definition)     { Inquirex::TTY::FlowLoader.load(back_flow_path) }
+      let(:renderer)       { Inquirex::TTY::Renderer.new(prompt: instance_double(TTY::Prompt)) }
+      let(:tmpfile)        { Tempfile.new(["run", ".json"]) }
+      let(:result)         { JSON.parse(File.read(tmpfile.path)) }
+      let(:calls)          { [] }
+
+      # Each entry answers one render: a value, or a navigation action to raise.
+      let(:script) { [] }
+
+      before do
+        allow(Inquirex::TTY::FlowLoader).to receive(:load).and_return(definition)
+        allow(Inquirex::TTY::Renderer).to receive(:new).and_return(renderer)
+        allow(renderer).to receive(:render) do |node, **kwargs|
+          calls << [node.id, kwargs[:previous]]
+          reply = script.shift
+          raise Inquirex::TTY::Navigation, reply if %i[back skip help].include?(reply)
+
+          node.display? ? nil : reply
+        end
+        allow(renderer).to receive(:show_keymap)
+        allow(renderer).to receive(:notice)
+        allow(command).to receive_messages(public_ip: nil, local_ip: nil)
+        allow($stdout).to receive(:puts)
+        command.call(flow_file: back_flow_path, output: tmpfile.path)
+      end
+
+      after { tmpfile.close; tmpfile.unlink }
+
+      context "when going back from the second question" do
+        let(:script) { ["Alan", :back, "Ada", "Addie", nil] }
+
+        it "re-asks the first question with its answer pre-filled" do
+          expect(calls[2]).to eq([:name, "Alan"])
+        end
+
+        it "keeps the new answer" do
+          expect(result.dig("answers", "name")).to eq("Ada")
+        end
+
+        it "does not record the undone step twice" do
+          expect(result["path_taken"]).to eq(%w[name nickname done])
+        end
+      end
+
+      context "when going back from a display step" do
+        let(:script) { ["Alan", "Addie", :back, "Ad", nil] }
+
+        it "returns to the last question answered" do
+          expect(calls[3]).to eq([:nickname, "Addie"])
+        end
+      end
+
+      context "when going back from the first question" do
+        let(:script) { [:back, "Alan", "Addie", nil] }
+
+        it "says there is nothing to go back to and asks again" do
+          expect(renderer).to have_received(:notice).with(/nothing to go back to/)
+          expect(calls.first(2).map(&:first)).to eq(%i[name name])
+        end
+      end
+
+      context "when skipping an optional question" do
+        let(:script) { ["Alan", :skip, nil] }
+
+        it "records the skip" do
+          expect(result.dig("answers", "nickname")).to be_nil
+          expect(result["path_taken"]).to eq(%w[name nickname done])
+        end
+      end
+
+      context "when skipping a required question" do
+        let(:script) { [:skip, "Alan", "Addie", nil] }
+
+        it "refuses and asks again" do
+          expect(renderer).to have_received(:notice).with(/required/)
+          expect(result.dig("answers", "name")).to eq("Alan")
+        end
+      end
+
+      context "when skipping a display step" do
+        let(:script) { %w[Alan Addie] + [:skip] }
+
+        it "moves past it" do
+          expect(result["path_taken"]).to eq(%w[name nickname done])
+        end
+      end
+
+      context "when asking for help" do
+        let(:script) { [:help, "Alan", "Addie", nil] }
+
+        it "shows the keymap and asks the same question again" do
+          expect(renderer).to have_received(:show_keymap)
+          expect(calls.first(2).map(&:first)).to eq(%i[name name])
+        end
+      end
+    end
+
+    context "when the user presses Ctrl-C" do
+      let(:definition) { Inquirex::TTY::FlowLoader.load(hello_flow_path) }
+      let(:renderer)   { Inquirex::TTY::Renderer.new(prompt: instance_double(TTY::Prompt)) }
+
+      before do
+        allow(Inquirex::TTY::FlowLoader).to receive(:load).and_return(definition)
+        allow(Inquirex::TTY::Renderer).to receive(:new).and_return(renderer)
+        allow(renderer).to receive(:render).and_raise(TTY::Reader::InputInterrupt)
+        allow($stdout).to receive(:puts)
+        allow($stderr).to receive(:puts)
+      end
+
+      it "exits with status 130" do
+        expect { command.call(flow_file: hello_flow_path) }
+          .to raise_error(SystemExit) { |e| expect(e.status).to eq(130) }
+      end
+    end
+
     context "when the engine raises an Inquirex error" do
       let(:definition) { Inquirex::TTY::FlowLoader.load(hello_flow_path) }
 

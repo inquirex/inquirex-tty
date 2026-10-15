@@ -27,6 +27,8 @@ RSpec.describe Inquirex::TTY::Renderer do
   before do
     allow($stdout).to receive(:puts)
     allow(prompt).to receive(:keypress)
+    allow(prompt).to receive(:subscribe)
+    allow(prompt).to receive(:unsubscribe)
   end
 
   describe "#render" do
@@ -338,6 +340,87 @@ RSpec.describe Inquirex::TTY::Renderer do
         allow(prompt).to receive(:ask).and_return("only line", "")
         expect(renderer.render(node)).to eq("only line")
       end
+    end
+  end
+
+  describe "#render with a previous answer (after going back)" do
+    let(:options) { %w[single married] }
+
+    it "subscribes a KeyMap that knows the pre-filled text" do
+      allow(prompt).to receive(:ask).and_return("Alan")
+      renderer.render(make_node(verb: :ask, type: :string), previous: "Al")
+      expect(prompt).to have_received(:subscribe).with(an_instance_of(Inquirex::TTY::KeyMap))
+    end
+
+    it "pre-fills a text answer" do
+      allow(prompt).to receive(:ask).and_return("Alan")
+      renderer.render(make_node(verb: :ask, type: :string), previous: "Al")
+      expect(prompt).to have_received(:ask).with("Question?", value: "Al")
+    end
+
+    it "pre-fills a number answer" do
+      allow(prompt).to receive(:ask).and_return(3)
+      renderer.render(make_node(verb: :ask, type: :integer), previous: 2)
+      expect(prompt).to have_received(:ask).with("Question?", convert: :int, value: "2")
+    end
+
+    it "defaults a yes/no question to the previous answer" do
+      allow(prompt).to receive(:yes?).and_return(false)
+      renderer.render(make_node(verb: :confirm, type: :boolean), previous: false)
+      expect(prompt).to have_received(:yes?).with("Question?", default: false)
+    end
+
+    it "highlights the previous choice in a select list" do
+      allow(prompt).to receive(:select).and_return("married")
+      renderer.render(make_node(verb: :ask, type: :enum, options:), previous: "married")
+      expect(prompt).to have_received(:select).with("Question?", options, default: 2)
+    end
+
+    it "ignores a previous choice that is no longer an option" do
+      allow(prompt).to receive(:select).and_return("single")
+      renderer.render(make_node(verb: :ask, type: :enum, options:), previous: "widowed")
+      expect(prompt).to have_received(:select).with("Question?", options)
+    end
+
+    it "pre-checks the previous multi-select answer over a suggestion" do
+      allow(prompt).to receive(:multi_select).and_return(["single"])
+      renderer.render(make_node(verb: :ask, type: :multi_enum, options:), suggestion: ["married"], previous: ["single"])
+      expect(prompt).to have_received(:multi_select).with("Question?", options, min: 1, default: ["single"])
+    end
+
+    it "starts a slider at the previous value" do
+      hint = Inquirex::WidgetHint.new(type: :slider, options: {})
+      allow(prompt).to receive(:slider).and_return(4)
+      renderer.render(make_node(verb: :ask, type: :integer, hints: { tty: hint }), previous: 4)
+      expect(prompt).to have_received(:slider).with("Question?", default: 4)
+    end
+  end
+
+  describe "#render when a navigation key is pressed" do
+    before { allow(prompt).to receive(:ask).and_raise(Inquirex::TTY::Navigation, :back) }
+
+    it "lets the Navigation propagate to the run loop" do
+      expect { renderer.render(make_node(verb: :ask, type: :string)) }
+        .to raise_error(Inquirex::TTY::Navigation) { |e| expect(e.action).to eq(:back) }
+    end
+
+    it "detaches its KeyMap so it cannot fire on the next question" do
+      expect { renderer.render(make_node(verb: :ask, type: :string)) }.to raise_error(Inquirex::TTY::Navigation)
+      expect(prompt).to have_received(:unsubscribe).with(an_instance_of(Inquirex::TTY::KeyMap))
+    end
+  end
+
+  describe "#show_keymap" do
+    it "lists every binding and waits for a key" do
+      renderer.show_keymap
+      expect(prompt).to have_received(:keypress).with(/return to the question/)
+    end
+  end
+
+  describe "#notice" do
+    it "prints the message" do
+      renderer.notice("Nothing to go back to.")
+      expect($stdout).to have_received(:puts).with(/Nothing to go back to\./)
     end
   end
 

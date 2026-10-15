@@ -74,20 +74,95 @@ module Inquirex
       # @param suggestion [Array, nil] prefill suggestion for the step (option
       #   form values, e.g. from Engine#suggestion_for) — multi-select prompts
       #   render these choices pre-checked so the user confirms or extends
+      # @param previous [Object, nil] the step's earlier answer (from
+      #   Engine#previous_answer), pre-filled when the user comes back to it
       # @return [Object, nil]
-      def render(node, suggestion: nil)
+      # @raise [Navigation] when the user presses a navigation key (see {KeyMap})
+      def render(node, suggestion: nil, previous: nil)
         @current_suggestion = suggestion
+        @previous = previous
+        # Not subscribe's block form: it unsubscribes only when the block
+        # returns, so a Navigation raised mid-read would leave this listener
+        # attached to the next question.
+        listener = KeyMap.new(prefilled: line_prefill(node))
+        prompt.subscribe(listener)
         if node.display?
           render_display_verb(node)
           nil
         else
+          puts pastel.dim(KeyMap::HINT)
           render_collecting(node)
         end
       ensure
+        prompt.unsubscribe(listener) if listener
         @current_suggestion = nil
+        @previous = nil
       end
 
+      # Shows every navigation key in a box and waits for a key.
+      #
+      # @return [void]
+      def show_keymap
+        width = KeyMap::BINDINGS.map { |key, _| key.length }.max
+        lines = KeyMap::BINDINGS.map { |key, action| "#{key.ljust(width)}   #{action}" }
+        puts
+        puts box(lines.join("\n"), title: "Keys", bg: :blue, fg: :white, align: :left)
+        prompt.keypress(pastel.dim("Press any key to return to the question..."))
+      end
+
+      # Prints a one-line dim notice, e.g. why a navigation key did nothing.
+      #
+      # @param message [String]
+      # @return [void]
+      def notice(message)
+        puts pastel.yellow("  ⚠ #{message}")
+      end
+
+      # Widgets whose input is a single editable line pre-filled with text.
+      LINE_WIDGETS = %i[text_input number_input currency_input date_picker email_input phone_input].freeze
+      private_constant :LINE_WIDGETS
+
       private
+
+      # The text a line widget starts with when the step is asked again, so
+      # {KeyMap} knows Backspace edits it rather than going back.
+      #
+      # @param node [Inquirex::Node]
+      # @return [String]
+      def line_prefill(node)
+        return "" if node.display? || !LINE_WIDGETS.include?(effective_tty_hint(node).type)
+
+        line_value.to_s
+      end
+
+      # The previous answer as line text, or nil when there is none to show.
+      #
+      # @return [String, nil]
+      def line_value
+        @previous.to_s unless @previous.nil? || @previous.is_a?(Enumerable)
+      end
+
+      # tty-prompt's +value:+ pre-fills a line; it must be absent, not nil,
+      # when there is nothing to pre-fill.
+      #
+      # @return [Hash]
+      def value_option
+        line_value ? { value: line_value } : {}
+      end
+
+      # The 1-based position of the previous answer among the node's options,
+      # which tty-prompt's select and enum_select take as +default:+.
+      #
+      # @param node [Inquirex::Node]
+      # @return [Hash] {} or { default: Integer }
+      def choice_default(node)
+        index = Array(node.options).index { |value| value.to_s == @previous.to_s } unless @previous.nil?
+        index ? { default: index + 1 } : {}
+      end
+
+      def press_any_key
+        prompt.keypress(pastel.dim("Press any key to continue...  (⌫ back · ? keys)"))
+      end
 
       # Dispatches display verbs to their styled renderers.
       # :header uses TTY::Font for a large ASCII-art title.
@@ -101,17 +176,17 @@ module Inquirex
           render_header(node)
         when :say
           puts "\n#{node.text}\n"
-          prompt.keypress(pastel.dim("Press any key to continue..."))
+          press_any_key
           sep(:green, "━")
         when :btw
           info(node.text)
-          prompt.keypress(pastel.dim("Press any key to continue..."))
+          press_any_key
         when :warning
           warning(node.text)
-          prompt.keypress(pastel.dim("Press any key to continue..."))
+          press_any_key
         else
           puts "\n#{node.text}\n"
-          prompt.keypress(pastel.dim("Press any key to continue..."))
+          press_any_key
         end
       end
 
@@ -128,11 +203,11 @@ module Inquirex
           puts pastel.yellow(title)
         end
         sep(:cyan, "━")
-        prompt.keypress(pastel.dim("Press any key to continue..."))
+        press_any_key
       rescue StandardError
         # Fall back to tty-box if TTY::Font cannot render the text
         puts box(node.text, bg: :blue, fg: :white)
-        prompt.keypress(pastel.dim("Press any key to continue..."))
+        press_any_key
         sep(:cyan, "━")
       end
 
@@ -164,7 +239,7 @@ module Inquirex
 
       # Single-line text.
       def render_text_input(node)
-        prompt.ask(node.question)
+        prompt.ask(node.question, **value_option)
       end
 
       # Multi-line text (empty line to submit).
@@ -210,9 +285,9 @@ module Inquirex
       # @param convert [Symbol] :int or :float
       # @return [Numeric, nil]
       def ask_bounded(node, convert:)
-        return prompt.ask(node.question, convert:) unless node.bounded?
+        return prompt.ask(node.question, convert:, **value_option) unless node.bounded?
 
-        prompt.ask(node.question, convert:, in: bounds_range(node)) do |q|
+        prompt.ask(node.question, convert:, in: bounds_range(node), **value_option) do |q|
           q.messages[:range?] = "Enter a value #{describe_bounds(node)}."
         end
       end
@@ -239,16 +314,22 @@ module Inquirex
 
       # Boolean — tty-prompt yes?.
       def render_yes_no(node)
-        prompt.yes?(node.question)
+        prompt.yes?(node.question, **boolean_default)
+      end
+
+      # @return [Hash] {} or { default: true/false } from the previous answer
+      def boolean_default
+        [true, false].include?(@previous) ? { default: @previous } : {}
       end
 
       # Single-choice scrollable menu.
       def render_select(node)
-        prompt.select(node.question, select_options(node))
+        prompt.select(node.question, select_options(node), **choice_default(node))
       end
 
-      # Multiple-choice list (space to toggle, min 1 selection). Suggested
-      # choices (an LLM extraction the user should confirm) render pre-checked.
+      # Multiple-choice list (space to toggle, min 1 selection). The previous
+      # answer (after going back) or else the suggested choices (an LLM
+      # extraction the user should confirm) render pre-checked.
       def render_multi_select(node)
         prompt.multi_select(node.question, select_options(node), min: 1, **multi_select_defaults(node))
       end
@@ -261,7 +342,7 @@ module Inquirex
       # @param node [Inquirex::Node]
       # @return [Hash] {} or { default: Array<String> }
       def multi_select_defaults(node)
-        suggested = Array(@current_suggestion)
+        suggested = Array(@previous.is_a?(Array) ? @previous : @current_suggestion)
         return {} if suggested.empty?
 
         labels = node.respond_to?(:option_labels) ? node.option_labels : nil
@@ -271,7 +352,7 @@ module Inquirex
 
       # Numbered choice menu.
       def render_enum_select(node)
-        prompt.enum_select(node.question, select_options(node))
+        prompt.enum_select(node.question, select_options(node), **choice_default(node))
       end
 
       # Hidden / masked input.
@@ -281,7 +362,7 @@ module Inquirex
 
       # Numeric slider. Reads min/max/step from explicit widget hint options.
       def render_slider(node)
-        opts = {}
+        opts = @previous.is_a?(Numeric) ? { default: @previous } : {}
         if node.respond_to?(:effective_widget_hint_for)
           hint_opts = node.effective_widget_hint_for(target: :tty)&.options || {}
           opts[:min]  = hint_opts[:min]  if hint_opts[:min]

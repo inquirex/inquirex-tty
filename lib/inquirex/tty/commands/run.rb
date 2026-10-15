@@ -24,6 +24,10 @@ module Inquirex
           else
             $stderr.puts json
           end
+        rescue ::TTY::Reader::InputInterrupt
+          puts
+          error("Aborted — no answers were saved.")
+          exit 130
         rescue Inquirex::TTY::Error => e
           error(e.message)
           exit 1
@@ -49,20 +53,56 @@ module Inquirex
 
           until engine.finished?
             step = engine.current_step
-            next_step(engine.current_step_id, engine.history.length + 1)
+            next_step(engine.current_step_id, engine.history.length)
 
-            if step.respond_to?(:llm_verb?) && step.llm_verb?
-              run_llm_step(engine, step, adapter, renderer)
-            elsif step.display?
-              renderer.render(step)
-              engine.advance
-            else
-              suggestion = engine.suggestion_for(engine.current_step_id)
-              engine.answer(renderer.render(step, suggestion:))
+            begin
+              run_step(engine, step, adapter, renderer)
+            rescue Navigation => e
+              navigate(engine, step, e.action, renderer)
             end
           end
 
           engine
+        end
+
+        # Renders one step and records what the user did with it.
+        def run_step(engine, step, adapter, renderer)
+          if step.respond_to?(:llm_verb?) && step.llm_verb?
+            run_llm_step(engine, step, adapter, renderer)
+          elsif step.display?
+            renderer.render(step)
+            engine.advance
+          else
+            id = engine.current_step_id
+            engine.answer(renderer.render(step, suggestion: engine.suggestion_for(id), previous: engine.previous_answer(id)))
+          end
+        end
+
+        # Acts on a navigation key pressed inside a widget. The loop then
+        # renders whatever step the engine is on, which for :help and for a
+        # refused :back or :skip is the same step again.
+        #
+        # @param action [Symbol] :back, :skip or :help (see KeyMap)
+        def navigate(engine, step, action, renderer)
+          puts
+          case action
+          when :back
+            renderer.notice("This is the first question — there is nothing to go back to.") unless engine.back
+          when :skip
+            skip_step(engine, step, renderer)
+          when :help
+            renderer.show_keymap
+          end
+        end
+
+        def skip_step(engine, step, renderer)
+          if step.display?
+            engine.advance
+          elsif step.required?
+            renderer.notice("This question is required and cannot be skipped.")
+          else
+            engine.skip
+          end
         end
 
         # Calls the LLM adapter for an LLM step, stores the result as the step's
